@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalshi volume monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F5F1; --surface:#FFFFFF; --sunk:#E9EDE6;
+  --ink:#16201A; --ink-2:#465348; --ink-3:#768278; --rule:#D8DED5; --rule-2:#C4CCC1;
+  --kalshi:#3F7A2C; --kalshi-ink:#FFFFFF; --poly:#5B87E0; --poly-2:#9DB7EE;
+  --focus:#1F6FEB; --warn:#9A5B00;
+  --geo-illegal:#E0938A; --geo-legal:#8FD498; --geo-intl:#F6E2A1;
+  --radius:10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D120F; --surface:#141B16; --sunk:#1B241E;
+    --ink:#E6ECE7; --ink-2:#AAB6AD; --ink-3:#7C887F; --rule:#253029; --rule-2:#344038;
+    --kalshi:#5E9E48; --kalshi-ink:#FFFFFF; --poly:#6E97EA; --poly-2:#3E5A93;
+    --focus:#6EA8FF; --warn:#E3A84B;
+    --geo-illegal:#C9776E; --geo-legal:#5FAF6A; --geo-intl:#D9C27A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D120F; --surface:#141B16; --sunk:#1B241E;
+  --ink:#E6ECE7; --ink-2:#AAB6AD; --ink-3:#7C887F; --rule:#253029; --rule-2:#344038;
+  --kalshi:#5E9E48; --kalshi-ink:#FFFFFF; --poly:#6E97EA; --poly-2:#3E5A93;
+  --focus:#6EA8FF; --warn:#E3A84B;
+  --geo-illegal:#C9776E; --geo-legal:#5FAF6A; --geo-intl:#D9C27A;
+  color-scheme: dark;
+}
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+html{ scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px); }
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size:15px; line-height:1.5; font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{ content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--bg); }
+a{ color:inherit; text-decoration-color:var(--rule-2); text-underline-offset:3px; }
+a:hover{ text-decoration-color:currentColor; }
+button,input,select{ font:inherit; color:inherit; }
+:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; border-radius:6px; }
+
+.wrap{ max-width:1240px; margin:0 auto; padding:0 clamp(16px,3vw,32px); }
+
+/* Masthead */
+.masthead{ padding:28px 0 18px; display:flex; gap:24px; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; }
+.masthead h1{
+  margin:0; font-size:clamp(26px,3.4vw,38px); line-height:1.05; letter-spacing:-0.015em;
+  font-weight:680; font-stretch:118%;
+}
+.masthead h1 .mark{ display:inline-block; width:.62em; height:.62em; background:var(--kalshi); border-radius:3px; margin-right:.32em; transform:translateY(-.04em); }
+.masthead p{ margin:8px 0 0; color:var(--ink-2); max-width:62ch; }
+.asof{ font-weight:600; color:var(--ink); }
+.data-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.btn{
+  display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px;
+  border:1px solid var(--rule-2); background:var(--surface); cursor:pointer; font-weight:550; font-size:14px;
+}
+.btn:hover{ border-color:var(--ink-3); }
+.btn.primary{ background:var(--kalshi); color:var(--kalshi-ink); border-color:transparent; }
+.btn.quiet{ background:transparent; }
+.data-status{ font-size:13px; color:var(--ink-3); width:100%; text-align:right; }
+
+/* Tabs */
+.tabs-bar{ position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--bg); border-bottom:1px solid var(--rule); }
+.tabs{ display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; }
+.tabs::-webkit-scrollbar{ display:none; }
+.tab{
+  appearance:none; border:0; background:none; cursor:pointer; padding:14px 14px 12px; white-space:nowrap;
+  font-weight:560; color:var(--ink-3); border-bottom:3px solid transparent; margin-bottom:-1px; font-size:15px;
+}
+.tab:hover{ color:var(--ink); }
+.tab[aria-selected="true"]{ color:var(--ink); border-bottom-color:var(--kalshi); }
+
+main{ padding:26px 0 72px; }
+.view[hidden]{ display:none; }
+.view h2{ margin:0 0 4px; font-size:22px; font-weight:650; font-stretch:110%; letter-spacing:-0.01em; }
+.view .lede{ margin:0 0 18px; color:var(--ink-2); max-width:78ch; }
+
+/* Controls */
+.toolbar{ display:flex; flex-wrap:wrap; gap:14px 22px; align-items:flex-end; margin:0 0 16px; }
+.ctl{ display:flex; flex-direction:column; gap:5px; }
+.ctl[hidden]{ display:none; }
+.ctl > .ctl-label{ font-size:12.5px; color:var(--ink-3); font-weight:550; }
+.seg{ display:inline-flex; background:var(--sunk); border-radius:999px; padding:3px; gap:2px; }
+.seg button{
+  border:0; background:transparent; padding:6px 13px; border-radius:999px; cursor:pointer; font-size:13.5px; font-weight:560; color:var(--ink-2);
+}
+.seg button[aria-pressed="true"]{ background:var(--surface); color:var(--ink); box-shadow:0 0 0 1px var(--rule-2); }
+.seg button:hover{ color:var(--ink); }
+
+.panel{ background:var(--surface); border:1px solid var(--rule); border-radius:14px; padding:18px clamp(14px,2vw,22px); }
+.panel + .panel{ margin-top:16px; }
+.readout{ display:flex; flex-wrap:wrap; gap:6px 28px; margin:0 0 14px; align-items:baseline; }
+.readout .big{ font-size:clamp(22px,2.6vw,30px); font-weight:680; font-stretch:112%; letter-spacing:-0.01em; }
+.readout .sub{ color:var(--ink-2); }
+.up{ color:var(--kalshi); font-weight:600; }
+.down{ color:#C2536B; font-weight:600; }
+
+.chart-box{ position:relative; height:clamp(300px,50vh,460px); }
+.chart-box.short{ height:clamp(200px,28vh,260px); }
+.chart-box.tiny{ height:150px; }
+
+/* Category chips */
+.chips-head{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin:2px 0 8px; }
+.chips-head p{ margin:0; font-size:13px; color:var(--ink-3); }
+.presets{ display:flex; gap:6px; flex-wrap:wrap; }
+.presets button{ border:1px solid var(--rule-2); background:transparent; padding:4px 11px; border-radius:999px; font-size:13px; cursor:pointer; color:var(--ink-2); }
+.presets button:hover{ color:var(--ink); border-color:var(--ink-3); }
+.chips{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 16px; }
+.chip{
+  display:inline-flex; align-items:center; gap:8px; padding:6px 11px 6px 8px; border-radius:8px;
+  border:1px solid var(--rule-2); background:var(--surface); cursor:pointer; font-size:13.5px;
+}
+.chip .sw{ width:12px; height:12px; border-radius:3px; flex:none; }
+.chip .val{ color:var(--ink-3); font-size:12.5px; }
+.chip[aria-pressed="false"]{ border-style:dashed; opacity:.5; }
+.chip[aria-pressed="false"] .sw{ background:transparent !important; box-shadow:inset 0 0 0 1.5px var(--ink-3); }
+.chip .rank{ font-size:11.5px; color:var(--ink-3); min-width:1.2em; }
+
+/* Assumptions */
+.assume{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px 22px; }
+.field{ display:flex; flex-direction:column; gap:5px; }
+.field label{ font-size:13px; color:var(--ink-2); font-weight:550; }
+.field .hint{ font-size:12px; color:var(--ink-3); }
+.num{ display:flex; align-items:center; border:1px solid var(--rule-2); border-radius:8px; background:var(--surface); overflow:hidden; max-width:180px; }
+.num input{ border:0; background:transparent; padding:7px 10px; width:100%; min-width:0; font-variant-numeric:tabular-nums; }
+.num span{ padding:0 10px; color:var(--ink-3); font-size:13px; border-left:1px solid var(--rule); align-self:stretch; display:flex; align-items:center; background:var(--sunk); }
+.num input:focus{ outline:none; }
+.num:focus-within{ border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 25%, transparent); }
+.assume-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; align-items:center; }
+.fit-note{ font-size:13px; color:var(--ink-2); margin:10px 0 0; max-width:80ch; }
+.fit-note strong{ color:var(--ink); }
+details.cat-rates{ margin-top:14px; border-top:1px solid var(--rule); padding-top:12px; }
+details.cat-rates summary{ cursor:pointer; font-weight:560; font-size:14px; }
+.cat-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px 16px; margin-top:12px; }
+.cat-grid .field label{ display:flex; gap:6px; align-items:center; }
+.cat-grid .sw{ width:10px; height:10px; border-radius:2px; display:inline-block; }
+
+.section-title{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin:0 0 10px; flex-wrap:wrap; }
+.section-title h3{ margin:0; font-size:16px; font-weight:650; }
+.section-title p{ margin:0; font-size:13px; color:var(--ink-3); }
+
+/* Tables */
+.table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--rule); border-radius:10px; }
+table.data{ border-collapse:separate; border-spacing:0; width:100%; font-size:13.5px; }
+table.data th, table.data td{ padding:7px 12px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--rule); }
+table.data thead th{ font-weight:600; color:var(--ink-2); background:var(--sunk); position:sticky; top:0; }
+table.data th:first-child, table.data td:first-child{ text-align:left; position:sticky; left:0; background:var(--surface); z-index:1; }
+table.data thead th:first-child{ background:var(--sunk); z-index:2; }
+table.data tbody tr:last-child td{ border-bottom:0; }
+table.data tr.total td{ font-weight:650; background:var(--sunk); }
+table.data tr.total td:first-child{ background:var(--sunk); }
+table.data tr.sub td:first-child{ padding-left:26px; color:var(--ink-2); }
+table.data tr.strong td{ font-weight:650; }
+table.data tr.rule td{ border-top:1px solid var(--rule-2); }
+table.data th.model, table.data td.model{ font-style:italic; color:var(--ink-2); background:color-mix(in srgb, var(--kalshi) 5%, var(--surface)); }
+table.data thead th.model{ background:color-mix(in srgb, var(--kalshi) 12%, var(--sunk)); }
+.swatch-cell{ display:inline-flex; align-items:center; gap:8px; }
+.swatch-cell .sw{ width:10px; height:10px; border-radius:2px; }
+.neg{ color:#C2536B; }
+
+.note{ font-size:13px; color:var(--ink-3); margin:12px 0 0; max-width:92ch; }
+.note strong{ color:var(--ink-2); font-weight:600; }
+.callout{ border-left:3px solid var(--warn); padding:8px 12px; background:color-mix(in srgb, var(--warn) 8%, var(--surface)); border-radius:0 8px 8px 0; font-size:13.5px; color:var(--ink-2); margin:0 0 16px; max-width:96ch; }
+.callout strong{ color:var(--ink); }
+.two-col{ display:grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr); gap:16px; }
+@media (max-width:900px){ .two-col{ grid-template-columns:1fr; } }
+.legend-inline{ display:flex; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--ink-2); margin:0 0 10px; }
+.legend-inline span{ display:inline-flex; gap:6px; align-items:center; }
+.legend-inline i{ width:11px; height:11px; border-radius:2px; display:inline-block; }
+.kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin:0 0 14px; }
+.kpi{ border:1px solid var(--rule); border-radius:10px; padding:10px 12px; background:var(--surface); }
+.kpi .k{ font-size:12.5px; color:var(--ink-3); }
+.kpi .v{ font-size:20px; font-weight:650; font-stretch:110%; }
+
+dialog{ border:1px solid var(--rule-2); border-radius:14px; background:var(--surface); color:var(--ink); max-width:min(720px,92vw); padding:22px 24px; }
+dialog::backdrop{ background:rgba(0,0,0,.35); }
+dialog h3{ margin:0 0 8px; font-size:18px; }
+dialog ul{ padding-left:18px; }
+dialog li{ margin:6px 0; }
+.err{ color:#C2536B; font-size:13px; }
+.chart-fallback{ display:flex; align-items:center; justify-content:center; height:100%; color:var(--ink-3); font-size:14px; text-align:center; padding:20px; }
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+
+.status{ display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; }
+.status.ok{ background:color-mix(in srgb, var(--kalshi) 16%, transparent); color:var(--kalshi); }
+.status.close{ background:color-mix(in srgb, var(--warn) 16%, transparent); color:var(--warn); }
+.status.off{ background:color-mix(in srgb, #C2536B 16%, transparent); color:#C2536B; }
+.status.na{ background:var(--sunk); color:var(--ink-3); }
+.check-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin:0 0 16px; }
+.check{ border:1px solid var(--rule); border-radius:12px; padding:12px 14px; background:var(--surface); }
+.check h4{ margin:0 0 6px; font-size:14px; font-weight:650; }
+.check .score{ font-size:22px; font-weight:680; font-stretch:110%; }
+.check p{ margin:6px 0 0; font-size:13px; color:var(--ink-2); }
+.empty{ border:1px dashed var(--rule-2); border-radius:12px; padding:22px; color:var(--ink-2); background:var(--surface); }
+.empty h3{ margin:0 0 8px; color:var(--ink); font-size:17px; }
+.empty ol{ margin:8px 0 0; padding-left:20px; }
+.empty code{ background:var(--sunk); padding:1px 6px; border-radius:5px; font-size:13px; }
+.src{ font-size:12.5px; color:var(--ink-3); margin:8px 0 0; }
+.seg button[disabled]{ opacity:.4; cursor:not-allowed; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <h1><span class="mark" aria-hidden="true"></span>Kalshi volume monitor</h1>
+      <p>Volume by category, fees priced from Kalshi’s fee schedule, and share against Polymarket and Hyperliquid, all built from venue data. Data through <span class="asof" id="asof">Nov 13, 2026</span>.</p>
+    </div>
+    <div class="data-actions">
+      <label class="btn primary" for="fileInput">Load data file</label>
+      <input type="file" id="fileInput" accept=".json,application/json" hidden>
+      <button class="btn" id="resetData" hidden>Back to snapshot</button>
+      <button class="btn quiet" id="aboutBtn">About the data</button>
+      <div class="data-status" id="dataStatus" aria-live="polite"></div>
+    </div>
+  </header>
+</div>
+
+<div class="tabs-bar">
+  <div class="wrap">
+    <nav class="tabs" role="tablist" aria-label="Dashboard sections">
+      <button class="tab" role="tab" id="tab-volume" aria-controls="volume" aria-selected="true" data-view="volume">Volume</button>
+      <button class="tab" role="tab" id="tab-fees" aria-controls="fees" aria-selected="false" data-view="fees">Fees &amp; revenue</button>
+      <button class="tab" role="tab" id="tab-event-share" aria-controls="event-share" aria-selected="false" data-view="event-share">Share vs Polymarket</button>
+      <button class="tab" role="tab" id="tab-perps-share" aria-controls="perps-share" aria-selected="false" data-view="perps-share">Perps vs Hyperliquid</button>
+    </nav>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section class="view" id="volume" role="tabpanel" aria-labelledby="tab-volume">
+    <h2>Volume by category</h2>
+    <p class="lede">Contracts traded at $1 face value, Kalshi’s own volume measure. Each bar stacks today’s largest category at the bottom; hide categories to isolate crypto, commodities or anything else.</p>
+    <div class="toolbar">
+      <div class="ctl"><span class="ctl-label">Period</span>
+        <div class="seg" data-bind="period"><button data-v="monthly">Monthly</button><button data-v="weekly">Weekly</button></div></div>
+      <div class="ctl"><span class="ctl-label">Show</span>
+        <div class="seg" data-bind="metric"><button data-v="volume">Volume</button><button data-v="fees" id="feesMetricBtn">Fees</button></div></div>
+      <div class="ctl" id="measureCtl" hidden><span class="ctl-label">Measure</span>
+        <div class="seg" data-bind="measure"><button data-v="contracts">Contracts at $1</button><button data-v="usd">Dollars paid</button></div></div>
+      <div class="ctl"><span class="ctl-label">Scale</span>
+        <div class="seg" data-bind="layout"><button data-v="stacked">Dollars</button><button data-v="mix">Share of total</button></div></div>
+      <div class="ctl" id="rangeCtl"><span class="ctl-label">Range</span>
+        <div class="seg" data-bind="range"><button data-v="all">Since Jan 2025</button><button data-v="2026">2026</button><button data-v="6">Last 6 months</button></div></div>
+    </div>
+    <div class="panel">
+      <div class="readout" id="volReadout"></div>
+      <div class="chips-head">
+        <p>Ordered by the latest period, largest first. Click a category to hide or show it.</p>
+        <div class="presets">
+          <button data-preset="all">All</button>
+          <button data-preset="nocombos">Without combos</button>
+          <button data-preset="crypto">Crypto</button>
+          <button data-preset="commodities">Commodities</button>
+          <button data-preset="cryptocomm">Crypto + commodities</button>
+          <button data-preset="sports">Sports + combos</button>
+        </div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="chart-box"><canvas id="volChart" aria-label="Stacked bar chart of Kalshi volume by category"></canvas></div>
+      <p class="src" id="volSrc"></p>
+    </div>
+    <div class="panel">
+      <div class="section-title"><h3 id="volTableTitle">Recent periods</h3><p id="volTableNote"></p></div>
+      <div class="table-scroll"><table class="data" id="volTable"></table></div>
+      <p class="note" id="volNote"></p>
+    </div>
+  </section>
+
+  <section class="view" id="fees" role="tabpanel" aria-labelledby="tab-fees" hidden>
+    <h2>Fees and revenue from the trade tape</h2>
+    <p class="lede">Every fill priced with Kalshi’s published fee schedule: taker fee 0.07 × M × contracts × price × (1 − price), plus maker fees on the series that charge them, using each series’ fee terms in force on the trade date. No assumed rates.</p>
+    <div id="feesBody"></div>
+  </section>
+
+  <section class="view" id="event-share" role="tabpanel" aria-labelledby="tab-event-share" hidden>
+    <h2>Relative volume vs Polymarket</h2>
+    <p class="lede">Kalshi’s share of event-contract volume against Polymarket, computed from venue trade data for every month shown.</p>
+    <div class="toolbar">
+      <div class="ctl"><span class="ctl-label">Compare with</span>
+        <div class="seg" data-bind="share.vs"><button data-v="pm">Polymarket</button><button data-v="pmus">Polymarket + Polymarket US</button></div></div>
+      <div class="ctl"><span class="ctl-label">Measure</span>
+        <div class="seg" data-bind="share.basis"><button data-v="contracts">Contracts at $1</button><button data-v="dollars">Dollars paid</button></div></div>
+      <div class="ctl"><span class="ctl-label">Polymarket wash trading</span>
+        <div class="seg" data-bind="share.haircut"><button data-v="0">Count all</button><button data-v="0.25">Remove 25%</button></div></div>
+    </div>
+    <div class="panel">
+      <div class="legend-inline"><span><i style="background:var(--poly)"></i>Polymarket share</span><span><i style="background:var(--kalshi)"></i>Kalshi share</span></div>
+      <div class="chart-box"><canvas id="shareChart" aria-label="Kalshi versus Polymarket share by month"></canvas></div>
+      <p class="note" id="shareNote"></p>
+    </div>
+  </section>
+
+  <section class="view" id="perps-share" role="tabpanel" aria-labelledby="tab-perps-share" hidden>
+    <h2>Perps: Kalshi vs Hyperliquid</h2>
+    <p class="lede">Perpetual futures notional volume on both venues, counted the same way from each exchange’s own daily records.</p>
+    <div class="callout"><strong>Read with care.</strong> Kalshi ended its volume incentive program on Oct 13, 2026, after reporting on repeated fixed-size ETH perp trades. This snapshot starts Oct 15, so it reflects post-incentive activity only.</div>
+    <div class="toolbar">
+      <div class="ctl"><span class="ctl-label">Period</span>
+        <div class="seg" data-bind="perps.gran"><button data-v="weekly">Weekly</button><button data-v="daily">Daily</button></div></div>
+      <div class="ctl"><span class="ctl-label">Kalshi perps fee rate (your assumption)</span>
+        <div class="num"><input type="number" step="0.5" min="0" data-perps-bps value="5" aria-label="Kalshi perps fee rate in basis points"><span>bps</span></div></div>
+    </div>
+    <div class="kpis" id="perpsKpis"></div>
+    <div class="two-col">
+      <div class="panel">
+        <div class="legend-inline"><span><i style="background:var(--poly)"></i>Hyperliquid share</span><span><i style="background:var(--kalshi)"></i>Kalshi share</span></div>
+        <div class="chart-box"><canvas id="perpsChart" aria-label="Kalshi versus Hyperliquid perps share"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="section-title"><h3>What trades, last 24 hours</h3><p>Nov 13, 2026</p></div>
+        <div class="chart-box short"><canvas id="perpsMixChart" aria-label="Perps volume mix by asset class"></canvas></div>
+        <p class="note">Hyperliquid’s figure includes builder-deployed stock and index markets.</p>
+      </div>
+    </div>
+    <p class="note" id="perpsNote"></p>
+  </section>
+
+</main>
+
+<dialog id="aboutDlg" aria-labelledby="aboutTitle">
+  <h3 id="aboutTitle">About the data</h3>
+  <p>A GitHub Actions job runs <strong>kalshi_pipeline.py</strong> every night and commits <strong>data.json</strong> next to this page, which loads it automatically. Until that file exists, or where it can’t be reached, the page falls back to the built-in snapshot. <em>Load data file</em> still works for a one-off file.</p>
+  <ul>
+    <li><strong>Pipeline file (primary):</strong> every Kalshi fill from the public trades endpoints, categorized by Kalshi’s series metadata, and priced with Kalshi’s fee schedule using each series’ and event’s fee terms in force on the trade date. Perps from the Kalshi and Hyperliquid APIs.</li>
+    <li><strong>Built-in snapshot (until the pipeline runs):</strong> Kalshi category volume from <a href="https://ticker-tracker.com/kalshi/volume" target="_blank" rel="noopener">TickerTracker</a>, which compiles Kalshi’s published daily market data; venue and perps volumes from <a href="https://defirate.com/prediction-markets/volume/" target="_blank" rel="noopener">DeFi Rate</a>. The snapshot has no fees: fees appear only once trade-level data is loaded.</li>
+    <li><strong>Polymarket</strong> volumes still come from DeFi Rate’s venue data; the pipeline does not pull Polymarket yet.</li>
+    <li><strong>Partial periods:</strong> category volumes for November 2026 cover Nov 1 to 12; venue and perps figures run through Nov 13.</li>
+  </ul>
+  <p style="margin-bottom:0"><button class="btn" id="aboutClose">Close</button></p>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+/* ===== @@DATA-START ===== */
+const SNAPSHOT = {
+  asOf: "2026-11-13",
+  source: "snapshot",
+  months: ["2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10","2026-11"],
+  partialMonths: { "2026-11": "Nov 1–12" },
+  monthly: {
+    total:[174937785,186533682,521158809,460392588,664370898,781780386,740327332,874375515,2863623043,4397854020,5816037888,6584051093,9554274275,10436368504,13055110890,14807809965,17910628644,33002650922,41046616505,40026381970,60847344368,98150242649,47434559218],
+    Combos:[0,0,0,0,0,0,0,0,530504,79858997,248986014,692245409,1341314614,1310857342,2195583505,3357764008,4876944928,11902115473,15002397139,17834595722,35470101717,66783095542,32828007895],
+    Sports:[7743904,37511448,405885156,296795472,509295187,619811888,541698657,657607058,2561278142,3874686316,5013360879,5303907569,7179224432,7301507706,8990781310,9506805658,10436863738,16374751000,18946109476,13576006323,14998416771,17700062580,7311751754],
+    Crypto:[31330149,36912898,30994387,31393590,29649842,37356951,61139886,97443188,99074648,124950840,128944813,184595971,343441618,799416860,1215625677,1362652998,2017834357,4018208540,6328552221,7584461206,8890365540,11406395171,5167993624],
+    Commodities:[813,11,526,700,815,8897,1666,841,8203,855,184346,1494029,1281837,605235,19576405,38224578,33911289,33637057,52034984,410239649,891280746,1244831787,658702702],
+    Elections:[15178024,3892311,5540956,30944463,18734821,31376919,18474955,14216105,20608453,82462185,141483777,30158119,51237948,90955554,110410299,109442015,171565250,208577893,113427254,276951965,136062489,460467686,1204225710],
+    Politics:[67076387,32092981,13537181,8203229,5217990,7039677,16331338,15245238,21462649,57423534,94237507,51491393,207390154,206318015,72776358,85569642,53207288,51223435,60160996,35018483,35932003,53161510,38612430],
+    Financials:[4526439,6985414,6949883,16350735,22759977,15192772,13931608,14456148,22294975,30958750,26918627,31004236,28777467,27109301,25804888,26994297,32540682,47791950,68692247,59799996,86257049,155871146,106152131],
+    Economics:[4998810,5621166,8240890,53446657,53928005,46091862,59603872,40661978,87911061,49061092,27738327,44489776,56815975,41230966,88071135,70106162,37269236,47656017,94166740,51661768,140654749,104039889,34372378],
+    Weather:[22331756,19284994,15674396,10726535,11227779,12404785,12982876,14347844,14361830,25098093,23455647,55639580,112749565,93798984,94961688,74616013,74432820,69984767,102330690,95667105,99927180,114357525,39704529]
+  },
+  weeks: ["2026-08-17","2026-08-24","2026-08-31","2026-09-07","2026-09-14","2026-09-21","2026-09-28","2026-10-05","2026-10-12","2026-10-19","2026-10-26","2026-11-02"],
+  weekly: {
+    total:[9100167289,10181384288,11893893114,13081678383,15272674337,15762096889,18402713287,19047941248,21516629613,25349390733,24816148269,29691342951],
+    Combos:[3992869284,5042708801,6223199604,7504607295,9125477584,9566685773,11865237709,12441615904,14505256585,18050052601,17082347174,20792983568],
+    Sports:[2974934674,2994887120,3495962473,3525668600,3617520418,3582764073,3624577860,3806921291,3953543696,4112696423,4250003379,4399229569],
+    Crypto:[1874421317,1859076804,1900460353,1770731226,2177011415,2262772813,2422507390,2370866553,2582779118,2645937246,2799494813,2934671266],
+    Commodities:[116610507,156983428,169638302,156358738,195699367,222404199,275799522,256293816,297775749,287838342,318401124,349584922],
+    Elections:[74857590,51651101,24213632,28292505,30793388,40017448,45887849,60589960,56518559,125475839,242793525,1080200508],
+    Politics:[6306224,6599643,6401069,6586884,10337942,8999957,9782149,12915549,13146451,12289562,11045230,24726112],
+    Financials:[12417302,10282261,10538267,9915438,12076959,11533521,82914442,28896163,25737861,31401522,33188162,45302777],
+    Economics:[8679436,18298929,24643806,40622927,55767918,13153561,19636180,17759989,24986396,28493949,24399417,17537078],
+    Weather:[20903369,19771432,19582415,20542689,23652253,26410337,27401938,26365031,28601452,25112341,22825946,23696469]
+  },
+  /* DeFi Rate, $ billions, Aug 2025 to Nov 2026 (Nov through 13th) */
+  venues: {
+    months:["2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10","2026-11"],
+    kalshi:{contracts:[0.859,2.9,4.4,5.8,6.6,9.5,10.4,13.1,14.8,18.0,32.7,41.1,40.0,60.7,97.8,51.4], dollars:[0.398,1.4,2.0,2.7,2.8,3.8,4.3,5.3,5.5,6.5,10.4,13.3,12.1,14.7,22.0,11.6]},
+    polymarket:{contracts:[1.1,1.6,4.1,4.3,5.3,7.7,7.9,10.6,9.0,7.3,11.3,8.6,5.0,4.7,5.3,2.3], dollars:[0.522,0.778,1.7,2.1,2.4,3.5,3.7,5.0,4.2,3.3,4.4,3.9,2.6,2.3,2.6,1.1]},
+    polymarketUS:{contracts:[0,0,0,0,0,0,0,0,0,0.325,4.1,5.0,3.8,8.8,14.9,7.0], dollars:[0,0,0,0,0,0,0,0,0,0.153,1.8,2.2,1.7,2.8,3.5,1.5]}
+  },
+  /* DeFi Rate perps, $ billions per UTC day */
+  perps: {
+    start:"2026-10-15",
+    kalshi:[0.923,1.1,0.295,0.517,0.987,1.1,1.2,0.887,0.928,0.526,0.495,0.949,0.894,0.995,1.4,1.4,0.288,0.325,1.1,1.0,1.7,2.0,1.5,0.159,0.486,1.9,1.5,1.4,1.2,1.5],
+    hyperliquid:[13.9,9.3,3.3,5.7,7.7,9.4,8.9,10.5,7.4,5.3,3.8,8.1,6.6,8.7,17.6,14.0,2.7,2.9,10.8,8.4,17.6,18.4,10.6,2.1,5.6,12.3,11.7,10.0,12.1,13.3],
+    mix24h:{ classes:["Crypto","Stocks","Indices","Metals","Energy"], kalshi:[57.6,21.0,15.8,4.9,0.7], hyperliquid:[65.8,21.6,9.6,1.4,1.5] }
+  }
+};
+
+/* ===== @@DATA-END ===== */
+
+/* ===== @@CALC-START ===== */
+const CATS = ["Combos","Sports","Crypto","Commodities","Elections","Politics","Financials","Economics","Weather","Other"];
+const CAT_COLORS = { Combos:"#2F6B3A", Sports:"#8CC26E", Crypto:"#E3A33B", Commodities:"#B4652A", Elections:"#4F7FD9",
+  Politics:"#8F74D6", Financials:"#2A9D8F", Economics:"#C8566F", Weather:"#69B9DA", Other:"#9AA59D" };
+const CAT_LABELS = { Weather:"Climate & weather" };
+const catLabel = c => CAT_LABELS[c] || c;
+const BLOCKS = ["monthly","weekly","monthlyUsd","monthlyFees","monthlyTakerFees","monthlyMakerFees","weeklyUsd","weeklyFees"];
+
+const Calc = {
+  data:null,
+  setData(d){
+    BLOCKS.forEach(k => {
+      const block = d[k]; if(!block || !block.total) return;
+      const n = block.total.length, other = new Array(n).fill(0);
+      for(let i=0;i<n;i++){ let s = 0; CATS.forEach(c => { if(c !== "Other" && block[c]) s += block[c][i] || 0; }); other[i] = Math.max(0, (block.total[i]||0) - s); }
+      if(!block.Other) block.Other = other;
+      CATS.forEach(c => { if(!block[c]) block[c] = new Array(n).fill(0); });
+    });
+    this.data = d;
+  },
+  hasFees(){ return !!(this.data.monthlyFees && this.data.monthlyFees.total); },
+  perpsDays(){
+    const p = this.data.perps, out = [];
+    if(!p || !p.kalshi) return out;
+    const start = Date.parse(p.start + "T00:00:00Z");
+    for(let i=0;i<p.kalshi.length;i++){
+      if(p.kalshi[i] == null || p.hyperliquid[i] == null) continue;
+      out.push({ date: new Date(start + i*86400000).toISOString().slice(0,10), k: p.kalshi[i]*1e9, h: p.hyperliquid[i]*1e9 });
+    }
+    return out;
+  },
+  perpsByMonth(){ const m = {}; this.perpsDays().forEach(d => { const ym = d.date.slice(0,7); m[ym] = (m[ym]||0) + d.k; }); return m; },
+  perpsWeeks(){
+    const weeks = [];
+    this.perpsDays().forEach(d => {
+      const t = Date.parse(d.date + "T00:00:00Z"), dow = (new Date(t).getUTCDay() + 6) % 7;
+      const ws = new Date(t - dow*86400000).toISOString().slice(0,10);
+      let w = weeks.find(x => x.week === ws);
+      if(!w){ w = { week:ws, k:0, h:0, days:0, first:d.date, last:d.date }; weeks.push(w); }
+      w.k += d.k; w.h += d.h; w.days++; w.last = d.date;
+    });
+    return weeks;
+  },
+  /* Venue data only. */
+  shareSeries(cfg){
+    const v = this.data.venues, rows = [];
+    if(!v) return rows;
+    v.months.forEach((ym, i) => {
+      const K = v.kalshi[cfg.basis][i];
+      let P = v.polymarket[cfg.basis][i] * (1 - (+cfg.haircut || 0));
+      if(cfg.vs === "pmus") P += v.polymarketUS[cfg.basis][i] || 0;
+      rows.push({ ym, kalshi: (K + P) > 0 ? K / (K + P) : null });
+    });
+    return rows;
+  },
+  feesMonth(i, perpsBps, otherRevPct, contraPct){
+    const d = this.data, ym = d.months[i];
+    const taker = d.monthlyTakerFees ? d.monthlyTakerFees.total[i] : null;
+    const maker = d.monthlyMakerFees ? d.monthlyMakerFees.total[i] : null;
+    const fees = d.monthlyFees.total[i];
+    const perpsVol = this.perpsByMonth()[ym] || 0, perpsFees = perpsVol * perpsBps / 1e4;
+    const tradingFees = fees + perpsFees, otherRev = tradingFees * otherRevPct / 100;
+    const gross = tradingFees + otherRev, contra = gross * contraPct / 100;
+    return { ym, volume: d.monthly.total[i], usd: d.monthlyUsd ? d.monthlyUsd.total[i] : null, taker, maker, fees, perpsVol, perpsFees,
+             tradingFees, otherRev, gross, contra, net: gross - contra,
+             bpsFace: d.monthly.total[i] ? fees / d.monthly.total[i] * 1e4 : null,
+             pctPaid: (d.monthlyUsd && d.monthlyUsd.total[i]) ? fees / d.monthlyUsd.total[i] : null };
+  }
+};
+
+/* ===== @@CALC-END ===== */
+
+const store = {
+  get(k){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const DEFAULT_STATE = () => ({ period:"monthly", metric:"volume", measure:"contracts", layout:"stacked", range:"all", hidden:[],
+  share:{ vs:"pm", basis:"contracts", haircut:"0" }, perps:{ gran:"weekly", bps:5 }, rev:{ otherRev:0, contra:0 } });
+let state = Object.assign(DEFAULT_STATE(), store.get("kvm-state-v2") || {});
+["share","perps","rev"].forEach(k => state[k] = Object.assign(DEFAULT_STATE()[k], state[k] || {}));
+const saveState = () => store.set("kvm-state-v2", state);
+
+function cloneSnapshot(){ return JSON.parse(JSON.stringify(SNAPSHOT)); }
+function mergeData(base, inc){
+  if(!inc || typeof inc !== "object") throw new Error("File is not a JSON object.");
+  const out = base, okArr = (a, n) => Array.isArray(a) && (n === undefined || a.length === n);
+  if(inc.months && inc.monthly){
+    if(!okArr(inc.monthly.total, inc.months.length)) throw new Error("monthly.total must have one value per month.");
+    out.months = inc.months; out.monthly = inc.monthly; out.partialMonths = inc.partialMonths || {};
+    ["monthlyUsd","monthlyFees","monthlyTakerFees","monthlyMakerFees"].forEach(k => { if(inc[k] && okArr(inc[k].total, inc.months.length)) out[k] = inc[k]; else delete out[k]; });
+  }
+  if(inc.weeks && inc.weekly && inc.weeks.length){
+    if(!okArr(inc.weekly.total, inc.weeks.length)) throw new Error("weekly.total must have one value per week.");
+    out.weeks = inc.weeks; out.weekly = inc.weekly;
+    ["weeklyUsd","weeklyFees"].forEach(k => { if(inc[k] && okArr(inc[k].total, inc.weeks.length)) out[k] = inc[k]; else delete out[k]; });
+  }
+  if(inc.venues && inc.venues.months){
+    const bv = base.venues, iv = inc.venues, months = [...new Set([...(bv ? bv.months : []), ...iv.months])].sort();
+    const pick = (venue, basis, m) => {
+      const ii = iv.months.indexOf(m), x = (ii >= 0 && iv[venue] && iv[venue][basis]) ? iv[venue][basis][ii] : null;
+      if(x != null) return x;
+      const bi = bv ? bv.months.indexOf(m) : -1, y = (bi >= 0 && bv[venue]) ? bv[venue][basis][bi] : null;
+      return y == null ? 0 : y;
+    };
+    const nv = { months }; ["kalshi","polymarket","polymarketUS"].forEach(v => { nv[v] = { contracts: months.map(m => pick(v,"contracts",m)), dollars: months.map(m => pick(v,"dollars",m)) }; });
+    out.venues = nv;
+  }
+  if(inc.perps && inc.perps.start && Array.isArray(inc.perps.kalshi)){
+    const map = {};
+    const add = p => { if(!p || !p.start || !p.kalshi) return; const s0 = Date.parse(p.start + "T00:00:00Z");
+      p.kalshi.forEach((k, i) => { const h = p.hyperliquid ? p.hyperliquid[i] : null; if(k != null && h != null) map[new Date(s0 + i*86400000).toISOString().slice(0,10)] = [k, h]; }); };
+    add(base.perps); add(inc.perps);
+    const days = Object.keys(map).sort();
+    if(days.length){
+      const k = [], h = [], end = Date.parse(days[days.length-1] + "T00:00:00Z");
+      for(let t = Date.parse(days[0] + "T00:00:00Z"); t <= end; t += 86400000){ const r = map[new Date(t).toISOString().slice(0,10)]; k.push(r ? r[0] : null); h.push(r ? r[1] : null); }
+      out.perps = { start: days[0], kalshi: k, hyperliquid: h, mix24h: inc.perps.mix24h || (base.perps && base.perps.mix24h) };
+    }
+  }
+  if(inc.asOf) out.asOf = inc.asOf;
+  if(inc.feeMethod) out.feeMethod = inc.feeMethod;
+  out.source = inc.source || "file";
+  return out;
+}
+store.del("kvm-deck");   /* clear deck figures an earlier version may have stored */
+const loaded = store.get("kvm-data-v2");
+try{ Calc.setData(loaded ? mergeData(cloneSnapshot(), loaded) : cloneSnapshot()); }catch(e){ Calc.setData(cloneSnapshot()); }
+
+/* ---------- formatting ---------- */
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function monthLabel(ym, short){ const [y,m] = ym.split("-"), base = MONTHS[+m-1] + "-" + y.slice(2); return Calc.data.partialMonths && Calc.data.partialMonths[ym] && !short ? base + "*" : base; }
+function dayLabel(iso){ const d = new Date(iso + "T00:00:00Z"); return MONTHS[d.getUTCMonth()] + " " + d.getUTCDate(); }
+function fmtUsd(v, digits){
+  if(v === null || v === undefined || isNaN(v)) return "–";
+  const a = Math.abs(v), s = v < 0 ? "−" : "", d = digits === undefined ? null : digits;
+  if(a >= 1e12) return s + "$" + (a/1e12).toFixed(d ?? 2) + "T";
+  if(a >= 1e9) return s + "$" + (a/1e9).toFixed(d ?? (a >= 1e11 ? 0 : 1)) + "B";
+  if(a >= 1e6) return s + "$" + (a/1e6).toFixed(d ?? (a >= 1e8 ? 0 : 1)) + "M";
+  if(a >= 1e3) return s + "$" + (a/1e3).toFixed(d ?? 0) + "K";
+  return s + "$" + a.toFixed(0);
+}
+const fmtPct = (v, d=0) => (v === null || v === undefined || isNaN(v)) ? "–" : (v*100).toFixed(d) + "%";
+const fmtSigned = (v, d=1, unit="%") => { if(v === null || isNaN(v)) return "–"; const r = Math.abs(v).toFixed(d); return (+r === 0 ? "" : (v >= 0 ? "+" : "−")) + r + unit; };
+function fmtChange(cur, prev){ if(!prev) return ""; const ch = cur/prev - 1; return `<span class="${ch>=0?"up":"down"}">${ch>=0?"+":"−"}${Math.abs(ch*100).toFixed(0)}%</span>`; }
+const STATUS_TEXT = { ok:"Ties", close:"Close", off:"Doesn’t tie", na:"Not checked" };
+const chip = s => `<span class="status ${s}">${STATUS_TEXT[s]}</span>`;
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+/* ---------- charts ---------- */
+const SEG = new WeakMap();
+let charts = {}, ANIM = true;
+function chartTheme(){ return { ink: cssVar("--ink"), ink2: cssVar("--ink-2"), ink3: cssVar("--ink-3"), rule: cssVar("--rule"), surface: cssVar("--surface"), kalshi: cssVar("--kalshi"), poly: cssVar("--poly") }; }
+function registerPlugins(){
+  if(!window.Chart || registerPlugins.done) return; registerPlugins.done = true;
+  Chart.register({ id:"segLabels", afterDatasetsDraw(chart){
+    const cfg = SEG.get(chart.canvas); if(!cfg) return;
+    const ctx = chart.ctx; ctx.save(); ctx.font = "600 11.5px Archivo, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    chart.data.datasets.forEach((ds, i) => { const meta = chart.getDatasetMeta(i); if(meta.hidden || meta.type !== "bar") return;
+      meta.data.forEach((bar, j) => { const v = ds.data[j]; if(v == null) return; if(Math.abs(bar.base - bar.y) < 15 || bar.width < 22) return;
+        ctx.fillStyle = cfg.color(i, j); ctx.fillText(cfg.format(v, i, j), bar.x, (bar.y + bar.base)/2); }); });
+    ctx.restore(); } });
+}
+function mkChart(id, config, opts){
+  const canvas = document.getElementById(id); if(!canvas) return null;
+  if(charts[id]){ charts[id].destroy(); delete charts[id]; }
+  if(!window.Chart){ canvas.parentElement.innerHTML = '<div class="chart-fallback">The chart library didn’t load. Check your connection and reload the page.</div>'; return null; }
+  registerPlugins();
+  if(opts && opts.seg) SEG.set(canvas, opts.seg); else SEG.delete(canvas);
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  config.options = config.options || {}; config.options.animation = (reduce || !ANIM) ? false : { duration: 350 };
+  charts[id] = new Chart(canvas.getContext("2d"), config);
+  return charts[id];
+}
+function baseScales(t, yCb, o={}){
+  return { x:{ stacked:!!o.stacked, grid:{ display:false }, ticks:{ color:t.ink3, font:{ family:"Archivo", size:11.5 }, maxRotation:0, autoSkip:true, autoSkipPadding:8 }, border:{ color:t.rule } },
+           y:{ stacked:!!o.stacked, beginAtZero:true, max:o.max, grid:{ color:t.rule }, border:{ display:false }, ticks:{ color:t.ink3, font:{ family:"Archivo", size:11.5 }, callback:yCb, maxTicksLimit:6 } } };
+}
+const tooltipBase = t => ({ backgroundColor:t.surface, titleColor:t.ink, bodyColor:t.ink2, footerColor:t.ink, borderColor:t.rule, borderWidth:1, padding:10,
+  titleFont:{ family:"Archivo", weight:"600" }, bodyFont:{ family:"Archivo" }, footerFont:{ family:"Archivo", weight:"600" }, boxPadding:4, usePointStyle:true });
+
+/* ---------- Volume ---------- */
+function volumeSeries(){
+  const d = Calc.data;
+  if(state.period === "monthly"){
+    let idx = d.months.map((m,i) => i);
+    if(state.range === "2026") idx = idx.filter(i => d.months[i] >= "2026-01");
+    if(state.range === "6") idx = idx.slice(-6);
+    const keys = idx.map(i => d.months[i]);
+    return { labels: keys.map(k => monthLabel(k)), keys, idx, block:d.monthly, usd:d.monthlyUsd, fee:d.monthlyFees, monthly:true };
+  }
+  const keys = d.weeks.slice();
+  return { labels: keys.map(dayLabel), keys, idx: keys.map((k,i) => i), block:d.weekly, usd:d.weeklyUsd, fee:d.weeklyFees, monthly:false };
+}
+function metricOf(s){ return (state.metric === "fees" && s.fee) ? "fees" : "volume"; }
+function catValue(s, cat, i){
+  if(metricOf(s) === "fees") return s.fee[cat][i] || 0;
+  if(state.measure === "usd" && s.usd) return s.usd[cat][i] || 0;
+  return s.block[cat][i] || 0;
+}
+function renderVolume(){
+  const s = volumeSeries(), t = chartTheme(), metric = metricOf(s);
+  document.getElementById("rangeCtl").style.display = s.monthly ? "" : "none";
+  document.getElementById("measureCtl").hidden = !(s.usd && metric === "volume");
+  const fb = document.getElementById("feesMetricBtn"); fb.disabled = !s.fee; fb.title = s.fee ? "" : "Load a pipeline file to see fees priced from the trade tape";
+  const last = s.idx[s.idx.length-1];
+  const order = CATS.slice().sort((a,b) => catValue(s,b,last) - catValue(s,a,last));
+  const hidden = new Set(state.hidden), visible = order.filter(c => !hidden.has(c));
+  document.getElementById("chips").innerHTML = order.map((c, n) => `<button class="chip" data-cat="${c}" aria-pressed="${!hidden.has(c)}"><span class="rank">${n+1}</span><span class="sw" style="background:${CAT_COLORS[c]}"></span>${catLabel(c)}<span class="val">${fmtUsd(catValue(s,c,last))}</span></button>`).join("");
+  const totals = s.idx.map(i => visible.reduce((a,c) => a + catValue(s,c,i), 0));
+  const datasets = visible.map(c => ({ label:catLabel(c), data: s.idx.map((i,k) => { const v = catValue(s,c,i); return state.layout === "mix" ? (totals[k] ? v/totals[k]*100 : 0) : v; }),
+    backgroundColor:CAT_COLORS[c], borderWidth:0, maxBarThickness:46, categoryPercentage:.82, barPercentage:.92 }));
+  mkChart("volChart", { type:"bar", data:{ labels:s.labels, datasets },
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false },
+      scales: baseScales(t, state.layout === "mix" ? v => v + "%" : v => fmtUsd(v), { stacked:true, max: state.layout === "mix" ? 100 : undefined }),
+      plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { itemSort:(a,b) => b.datasetIndex - a.datasetIndex,
+        callbacks:{ label:c => ` ${c.dataset.label}: ${state.layout === "mix" ? c.parsed.y.toFixed(1)+"%" : fmtUsd(c.parsed.y)}`, footer:items => "Total shown: " + fmtUsd(totals[items[0].dataIndex]) } }) } } });
+  const lastKey = s.keys[s.keys.length-1], partial = s.monthly && Calc.data.partialMonths[lastKey];
+  const word = metric === "fees" ? "fees priced from the tape" : (state.measure === "usd" && s.usd ? "dollars paid" : "volume");
+  const tLast = totals[totals.length-1], tPrev = totals[totals.length-2], top = visible[0];
+  document.getElementById("volReadout").innerHTML = visible.length ? `
+    <div><div class="sub">${s.monthly ? monthLabel(lastKey, true) + (partial ? " (" + partial + ")" : "") : "Week of " + dayLabel(lastKey)}, ${word}${hidden.size ? " (filtered)" : ""}</div><div class="big">${fmtUsd(tLast)}</div></div>
+    <div><div class="sub">vs prior ${s.monthly ? "month" : "week"}</div><div class="big">${partial ? '<span class="sub" style="font-size:15px">partial month</span>' : (fmtChange(tLast, tPrev) || "–")}</div></div>
+    <div><div class="sub">Largest category</div><div class="big">${catLabel(top)} <span class="sub" style="font-size:15px">${fmtPct(catValue(s,top,last)/tLast)}</span></div></div>` :
+    `<div class="sub">All categories are hidden. Pick one above or choose a preset.</div>`;
+  const n = Math.min(6, s.idx.length), cols = s.idx.slice(-n), colKeys = s.keys.slice(-n);
+  const head = `<thead><tr><th>${metric === "fees" ? "Fees" : "Volume"}</th>${colKeys.map(k => `<th>${s.monthly ? monthLabel(k) : dayLabel(k)}</th>`).join("")}<th>Share, latest</th>${metric === "fees" ? "<th>Bps of face, latest</th>" : ""}</tr></thead>`;
+  const rows = visible.map(c => `<tr><td><span class="swatch-cell"><span class="sw" style="background:${CAT_COLORS[c]}"></span>${catLabel(c)}</span></td>${cols.map(i => `<td>${fmtUsd(catValue(s,c,i))}</td>`).join("")}<td>${fmtPct(catValue(s,c,last)/tLast,1)}</td>${metric === "fees" ? `<td>${s.block[c][last] ? (s.fee[c][last]/s.block[c][last]*1e4).toFixed(1) : "–"}</td>` : ""}</tr>`).join("");
+  const tot = `<tr class="total"><td>Total shown</td>${cols.map(i => `<td>${fmtUsd(visible.reduce((a,c) => a + catValue(s,c,i), 0))}</td>`).join("")}<td>100%</td>${metric === "fees" ? "<td></td>" : ""}</tr>`;
+  document.getElementById("volTable").innerHTML = head + "<tbody>" + rows + tot + "</tbody>";
+  document.getElementById("volTableTitle").textContent = s.monthly ? "Last six months" : "Last six weeks";
+  document.getElementById("volTableNote").textContent = metric === "fees" ? "Taker plus maker fees, priced fill by fill" : (state.measure === "usd" && s.usd ? "Dollars actually paid" : "Contracts at $1 face value");
+  document.getElementById("volSrc").textContent = "Source: " + sourceLabel();
+  document.getElementById("volNote").innerHTML = (s.monthly ? (partial ? `* Latest month is partial (${partial}). ` : "") : "Weeks run Monday to Sunday. ") +
+    "Combos are Kalshi’s multi-leg parlays; their contracts usually trade for a few cents, so they dominate face-value volume but not dollars paid or fees. “Other” is everything outside the named categories.";
+}
+function sourceLabel(){ const d = Calc.data; return (d.source && d.source !== "snapshot") ? d.source : "TickerTracker, compiled from Kalshi’s published daily market data (snapshot)"; }
+
+/* ---------- Fees & revenue ---------- */
+function renderFees(){
+  const el = document.getElementById("feesBody");
+  if(!Calc.hasFees()){
+    if(charts.feesChart){ charts.feesChart.destroy(); delete charts.feesChart; }
+    el.innerHTML = `<div class="empty"><h3>No trade-level data loaded yet</h3>
+      <p>Fees here come only from pricing Kalshi’s actual fills. The built-in snapshot has volume by category but not prices per fill, so this tab stays empty rather than show an estimate.</p>
+      <ol><li>Run <code>python3 kalshi_pipeline.py --start 2025-01-01</code> somewhere with internet access. It resumes where it left off, so the backfill can run in pieces.</li>
+      <li>Load the <code>kalshi_dashboard_data.json</code> it writes with <em>Load data file</em>.</li></ol></div>`;
+    return;
+  }
+  const d = Calc.data, t = chartTheme(), idx = d.months.map((m,i) => i);
+  const rows = idx.map(i => Calc.feesMonth(i, +state.perps.bps, +state.rev.otherRev, +state.rev.contra));
+  el.innerHTML = `
+    <div class="panel"><div class="readout" id="feesReadout"></div>
+      <div class="chart-box"><canvas id="feesChart" aria-label="Fees by category per month"></canvas></div>
+      <p class="src">Method: ${d.feeMethod || "per-fill pricing with Kalshi’s fee schedule"}. Source: ${sourceLabel()}.</p></div>
+    <div class="panel"><div class="section-title"><h3>Revenue build</h3><p>Lines below trading fees are your inputs; nothing is fitted to the deck</p></div>
+      <div class="assume">
+        <div class="field"><label>Perps fee rate</label><div class="num"><input type="number" step="0.5" min="0" data-perps-bps value="${state.perps.bps}"><span>bps</span></div><div class="hint">Your assumption until perps fills are priced</div></div>
+        <div class="field"><label>Other revenue</label><div class="num"><input type="number" step="0.5" data-rev="otherRev" value="${state.rev.otherRev}"><span>%</span></div><div class="hint">Interest, processing, MM P&amp;L, as % of trading fees</div></div>
+        <div class="field"><label>Contra revenue</label><div class="num"><input type="number" step="0.5" min="0" data-rev="contra" value="${state.rev.contra}"><span>%</span></div><div class="hint">MM and broker payouts, rebates, promos, as % of gross</div></div>
+      </div>
+      <div class="table-scroll" id="feesScroll" style="margin-top:16px"><table class="data" id="feesTable"></table></div></div>`;
+  const last = rows[rows.length-1], full = rows.filter(r => !d.partialMonths[r.ym]).pop() || last;
+  document.getElementById("feesReadout").innerHTML = `
+    <div><div class="sub">${monthLabel(full.ym, true)} event-contract fees</div><div class="big">${fmtUsd(full.fees)}</div></div>
+    <div><div class="sub">Bps of face volume</div><div class="big">${full.bpsFace == null ? "–" : full.bpsFace.toFixed(1)}</div></div>
+    <div><div class="sub">Of dollars paid</div><div class="big">${fmtPct(full.pctPaid, 2)}</div></div>
+    <div><div class="sub">Maker share of fees</div><div class="big">${full.maker == null ? "–" : fmtPct(full.maker / full.fees)}</div></div>
+    <div><div class="sub">Annualized run rate</div><div class="big">${fmtUsd(full.fees * 12)}</div></div>`;
+  mkChart("feesChart", { type:"bar", data:{ labels: rows.map(r => monthLabel(r.ym)), datasets: [
+      ...CATS.slice().sort((a,b) => d.monthlyFees[b][d.months.length-1] - d.monthlyFees[a][d.months.length-1]).map(c => ({ type:"bar", label:catLabel(c), data: idx.map(i => d.monthlyFees[c][i]), backgroundColor:CAT_COLORS[c], borderWidth:0, maxBarThickness:46, stack:"f" })),
+      { type:"line", label:"Bps of face", data: rows.map(r => r.bpsFace), yAxisID:"y1", borderColor:t.ink, backgroundColor:t.ink, borderWidth:2, pointRadius:2, tension:.25 } ] },
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false },
+      scales: Object.assign(baseScales(t, v => fmtUsd(v), { stacked:true }), { y1:{ position:"right", beginAtZero:true, grid:{ display:false }, border:{ display:false }, ticks:{ color:t.ink2, callback:v => v + " bps", maxTicksLimit:6 } } }),
+      plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { callbacks:{ label:c => ` ${c.dataset.label}: ${c.dataset.yAxisID === "y1" ? (c.parsed.y == null ? "–" : c.parsed.y.toFixed(1) + " bps") : fmtUsd(c.parsed.y)}` } }) } } });
+  const lines = [["Volume ($1 face)","volume"],["Dollars paid","usd"],["Taker fees","taker"],["Maker fees","maker"],["Event-contract fees","fees","strong"],["Bps of face volume","bpsFace","bps"],["Perps volume","perpsVol"],["Perps fees (assumed rate)","perpsFees"],["Trading fees","tradingFees","total"],["Other revenue","otherRev"],["Gross revenue","gross","total"],["Contra revenue","contra","neg"],["Net revenue","net","total"]];
+  document.getElementById("feesTable").innerHTML = `<thead><tr><th>Line</th>${rows.map(r => `<th>${monthLabel(r.ym)}</th>`).join("")}</tr></thead><tbody>` +
+    lines.map(([label, k, cls]) => `<tr class="${cls === "total" ? "total" : cls === "strong" ? "strong" : ""}"><td>${label}</td>${rows.map(r => { const v = r[k];
+      if(v == null) return "<td>–</td>"; if(cls === "bps") return `<td>${v.toFixed(1)}</td>`; if(cls === "neg") return `<td>${v ? "(" + fmtUsd(v) + ")" : "–"}</td>`; return `<td>${fmtUsd(v)}</td>`; }).join("")}</tr>`).join("") + "</tbody>";
+  const sc = document.getElementById("feesScroll"); requestAnimationFrame(() => { sc.scrollLeft = sc.scrollWidth; });
+}
+
+/* ---------- Share vs Polymarket ---------- */
+function renderShare(){
+  const t = chartTheme(), rows = Calc.shareSeries(state.share).filter(r => r.kalshi != null);
+  mkChart("shareChart", { type:"bar", data:{ labels: rows.map(r => monthLabel(r.ym, true) + (r.ym === "2026-11" ? "*" : "")), datasets:[
+      { label:"Kalshi share", data: rows.map(r => r.kalshi*100), backgroundColor:t.kalshi, borderWidth:0, maxBarThickness:52, categoryPercentage:.84, barPercentage:.92 },
+      { label: state.share.vs === "pmus" ? "Polymarket + US share" : "Polymarket share", data: rows.map(r => 100 - r.kalshi*100), backgroundColor:t.poly, borderWidth:0, maxBarThickness:52, categoryPercentage:.84, barPercentage:.92 } ] },
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, scales: baseScales(t, v => v + "%", { stacked:true, max:100 }),
+      plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { itemSort:(a,b) => b.datasetIndex - a.datasetIndex, callbacks:{ label:c => ` ${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } }) } }
+  }, { seg:{ format:v => Math.round(v) + "%", color:() => "#FFFFFF" } });
+  document.getElementById("shareNote").textContent = "Kalshi ÷ (Kalshi + Polymarket" + (state.share.vs === "pmus" ? " + Polymarket US" : "") + "), " +
+    (state.share.basis === "contracts" ? "counting contracts at $1 face value on both venues" : "using dollars actually paid") + ", from DeFi Rate’s venue trade data, which starts August 2025." +
+    (+state.share.haircut > 0 ? " Polymarket’s international volume is cut by 25%, the Columbia wash-trading estimate." : "") +
+    " * November 2026 runs through Nov 13. DeFi Rate is missing some Polymarket days in Sep–Oct 2026, which slightly overstates Kalshi’s share in those months.";
+}
+
+/* ---------- Perps ---------- */
+function renderPerps(){
+  const t = chartTheme(), days = Calc.perpsDays();
+  let labels, K, H;
+  if(state.perps.gran === "daily"){ labels = days.map(d => dayLabel(d.date)); K = days.map(d => d.k); H = days.map(d => d.h); }
+  else { const w = Calc.perpsWeeks(); labels = w.map(x => x.days < 7 ? `${dayLabel(x.first)}–${new Date(x.last + "T00:00:00Z").getUTCDate()}*` : `Wk of ${dayLabel(x.week)}`); K = w.map(x => x.k); H = w.map(x => x.h); }
+  const kp = K.map((v,i) => v/(v+H[i])*100);
+  mkChart("perpsChart", { type:"bar", data:{ labels, datasets:[
+      { label:"Kalshi", data:kp, raw:K, backgroundColor:t.kalshi, borderWidth:0, maxBarThickness:60 },
+      { label:"Hyperliquid", data:kp.map(v => 100 - v), raw:H, backgroundColor:t.poly, borderWidth:0, maxBarThickness:60 } ] },
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, scales: baseScales(t, v => v + "%", { stacked:true, max:100 }),
+      plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { itemSort:(a,b) => b.datasetIndex - a.datasetIndex, callbacks:{ label:c => ` ${c.dataset.label}: ${c.parsed.y.toFixed(1)}% (${fmtUsd(c.dataset.raw[c.dataIndex])})` } }) } }
+  }, { seg:{ format:v => (v < 10 ? v.toFixed(1) : Math.round(v)) + "%", color:() => "#FFFFFF" } });
+  const recent = days.slice(-30), k30 = recent.reduce((a,d) => a + d.k, 0), h30 = recent.reduce((a,d) => a + d.h, 0), fees = k30 * state.perps.bps / 1e4;
+  document.getElementById("perpsKpis").innerHTML = `
+    <div class="kpi"><div class="k">Kalshi perps, ${recent.length} days</div><div class="v">${fmtUsd(k30)}</div></div>
+    <div class="kpi"><div class="k">Hyperliquid perps, ${recent.length} days</div><div class="v">${fmtUsd(h30)}</div></div>
+    <div class="kpi"><div class="k">Kalshi share</div><div class="v">${fmtPct(k30/(k30+h30),1)}</div></div>
+    <div class="kpi"><div class="k">Kalshi fees at ${(+state.perps.bps).toFixed(1)} bps (assumed)</div><div class="v">${fmtUsd(fees)}</div></div>`;
+  const mix = Calc.data.perps.mix24h, mc = ["#E3A33B","#4F7FD9","#2A9D8F","#B4652A","#C8566F"];
+  mkChart("perpsMixChart", { type:"bar", data:{ labels:["Kalshi","Hyperliquid"], datasets: mix.classes.map((c,i) => ({ label:c, data:[mix.kalshi[i], mix.hyperliquid[i]], backgroundColor:mc[i], borderWidth:0, maxBarThickness:34 })) },
+    options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ stacked:true, max:100, grid:{ color:t.rule }, border:{ display:false }, ticks:{ color:t.ink3, callback:v => v + "%", maxTicksLimit:5 } }, y:{ stacked:true, grid:{ display:false }, ticks:{ color:t.ink2, font:{ family:"Archivo", weight:"600" } } } },
+      plugins:{ legend:{ position:"bottom", labels:{ color:t.ink2, boxWidth:10, boxHeight:10, font:{ family:"Archivo", size:12 } } }, tooltip:Object.assign(tooltipBase(t), { callbacks:{ label:c => ` ${c.dataset.label}: ${c.parsed.x.toFixed(1)}%` } }) } }
+  }, { seg:{ format:v => v >= 8 ? Math.round(v) + "%" : "", color:() => "#FFFFFF" } });
+  document.getElementById("perpsNote").textContent = (state.perps.gran === "weekly" ? "Weeks run Monday to Sunday; * marks partial weeks. " : "") +
+    "Notional, one side of each trade, whole UTC days, from DeFi Rate’s reads of each exchange’s own data. The perps fee rate is your assumption; Kalshi’s perps fee table isn’t applied yet.";
+}
+
+/* ---------- Wiring ---------- */
+const RENDER = { "volume":renderVolume, "fees":renderFees, "event-share":renderShare, "perps-share":renderPerps };
+const VIEWS = Object.keys(RENDER);
+let current = "volume";
+const getPath = (o, p) => p.split(".").reduce((x,k) => x[k], o);
+function setPath(o, p, v){ const ks = p.split("."), last = ks.pop(); ks.reduce((x,k) => x[k], o)[last] = v; }
+function syncSegs(){ document.querySelectorAll(".seg[data-bind]").forEach(seg => { const v = String(getPath(state, seg.dataset.bind)); seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === v))); }); }
+function show(view){
+  if(!RENDER[view]) view = "volume";
+  current = view; ANIM = true;
+  document.querySelectorAll(".view").forEach(s => s.hidden = s.id !== view);
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.view === view)));
+  if(location.hash.slice(1) !== view) history.replaceState(null, "", "#" + view);
+  renderCurrent();
+}
+function renderCurrent(){ syncSegs(); try{ RENDER[current](); }catch(e){ console.error(e); } ANIM = false; }
+function updateStatus(){
+  const d = Calc.data, dt = new Date(d.asOf + "T00:00:00Z");
+  document.getElementById("asof").textContent = `${MONTHS[dt.getUTCMonth()]} ${dt.getUTCDate()}, ${dt.getUTCFullYear()}`;
+  const fromFile = d.source && d.source !== "snapshot";
+  document.getElementById("resetData").hidden = !fromFile;
+  document.getElementById("dataStatus").textContent = fromFile ? `Using loaded file: ${d.source}` : "Using the built-in snapshot (no fee data)";
+}
+document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest(".tab"); if(b) show(b.dataset.view); });
+document.querySelector(".tabs").addEventListener("keydown", e => {
+  if(!["ArrowLeft","ArrowRight"].includes(e.key)) return;
+  const n = (VIEWS.indexOf(current) + (e.key === "ArrowRight" ? 1 : -1) + VIEWS.length) % VIEWS.length;
+  show(VIEWS[n]); document.querySelector(`.tab[data-view="${VIEWS[n]}"]`).focus();
+});
+window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+document.addEventListener("click", e => {
+  const segBtn = e.target.closest(".seg[data-bind] button");
+  if(segBtn){ if(segBtn.disabled) return; setPath(state, segBtn.parentElement.dataset.bind, segBtn.dataset.v); saveState(); renderCurrent(); return; }
+  const c = e.target.closest(".chip[data-cat]");
+  if(c){ const h = new Set(state.hidden); h.has(c.dataset.cat) ? h.delete(c.dataset.cat) : h.add(c.dataset.cat); state.hidden = [...h]; saveState(); renderCurrent(); return; }
+  const pre = e.target.closest("[data-preset]");
+  if(pre){ const keep = { all:CATS, nocombos:CATS.filter(x => x !== "Combos"), crypto:["Crypto"], commodities:["Commodities"], cryptocomm:["Crypto","Commodities"], sports:["Sports","Combos"] }[pre.dataset.preset];
+    state.hidden = CATS.filter(x => !keep.includes(x)); saveState(); renderCurrent(); return; }
+  if(e.target.id === "aboutBtn"){ const d = document.getElementById("aboutDlg"); d.showModal ? d.showModal() : d.setAttribute("open",""); return; }
+  if(e.target.id === "aboutClose"){ const d = document.getElementById("aboutDlg"); d.close ? d.close() : d.removeAttribute("open"); return; }
+  if(e.target.id === "resetData"){ store.del("kvm-data-v2"); Calc.setData(cloneSnapshot()); updateStatus(); renderCurrent(); return; }
+});
+document.addEventListener("input", e => {
+  const el = e.target;
+  if(el.hasAttribute("data-perps-bps")){ const v = parseFloat(el.value); if(!isNaN(v) && v >= 0){ state.perps.bps = v; saveState();
+    document.querySelectorAll("[data-perps-bps]").forEach(x => { if(x !== el) x.value = v; }); if(current === "perps-share") renderPerps(); else if(current === "fees") refreshFeesTable(); } return; }
+  if(el.dataset.rev){ const v = parseFloat(el.value); if(!isNaN(v)){ state.rev[el.dataset.rev] = v; saveState(); refreshFeesTable(); } return; }
+});
+function refreshFeesTable(){ const a = document.activeElement, sel = a && a.dataset ? (a.dataset.rev ? `[data-rev="${a.dataset.rev}"]` : (a.hasAttribute && a.hasAttribute("data-perps-bps") ? "[data-perps-bps]" : null)) : null;
+  renderFees(); if(sel){ const n = document.querySelector("#feesBody " + sel); if(n){ n.focus(); const L = n.value.length; try{ n.setSelectionRange(L, L); }catch(e){} } } }
+document.getElementById("fileInput").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{ const inc = JSON.parse(r.result), merged = mergeData(cloneSnapshot(), inc); merged.source = inc.source || f.name;
+      Calc.setData(merged); store.set("kvm-data-v2", Object.assign({}, inc, { source: merged.source })); updateStatus(); renderCurrent(); }
+    catch(err){ document.getElementById("dataStatus").innerHTML = `<span class="err">Couldn’t load ${f.name}: ${err.message}</span>`; }
+    e.target.value = "";
+  };
+  r.readAsText(f);
+});
+/* Nightly data from the pipeline, published next to this page. Falls back to the snapshot. */
+function loadPublishedData(){
+  if(!/^https?:$/.test(location.protocol) && location.protocol !== "file:") return;
+  const ctl = ("AbortController" in window) ? new AbortController() : null;
+  const timer = setTimeout(() => ctl && ctl.abort(), 8000);
+  fetch("data.json", { cache:"no-store", signal: ctl ? ctl.signal : undefined })
+    .then(r => r.ok ? r.json() : null)
+    .then(j => { clearTimeout(timer); if(!j || !j.monthly) return;
+      const merged = mergeData(cloneSnapshot(), j); merged.source = j.source || "Kalshi trade tape";
+      Calc.setData(merged); store.del("kvm-data-v2"); ANIM = false; updateStatus(); renderCurrent(); })
+    .catch(() => clearTimeout(timer));
+}
+if(window.matchMedia){ const mq = matchMedia("(prefers-color-scheme: dark)"); mq.addEventListener ? mq.addEventListener("change", renderCurrent) : mq.addListener(renderCurrent); }
+new MutationObserver(() => { ANIM = false; renderCurrent(); }).observe(document.documentElement, { attributes:true, attributeFilter:["data-theme"] });
+function boot(){ document.querySelectorAll("[data-perps-bps]").forEach(x => x.value = state.perps.bps); updateStatus(); show(location.hash.slice(1) || "volume"); loadPublishedData(); }
+function start(){
+  if(window.Chart){ Chart.defaults.font.family = "Archivo, system-ui, sans-serif"; boot(); return; }
+  const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js";
+  s.onload = () => { if(window.Chart) Chart.defaults.font.family = "Archivo, system-ui, sans-serif"; boot(); }; s.onerror = boot;
+  document.head.appendChild(s);
+}
+start();
+</script>
+</body>
+</html>

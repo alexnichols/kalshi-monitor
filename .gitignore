@@ -1,0 +1,5 @@
+# Deck figures are confidential: keep them on your machine, never in this repo.
+deck_tieout.json
+*deck*.json
+__pycache__/
+*.pyc
