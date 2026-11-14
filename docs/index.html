@@ -246,7 +246,7 @@ dialog li{ margin:6px 0; }
     <p class="lede">Contracts traded at $1 face value, Kalshi’s own volume measure. Each bar stacks today’s largest category at the bottom; hide categories to isolate crypto, commodities or anything else.</p>
     <div class="toolbar">
       <div class="ctl"><span class="ctl-label">Period</span>
-        <div class="seg" data-bind="period"><button data-v="monthly">Monthly</button><button data-v="weekly">Weekly</button></div></div>
+        <div class="seg" data-bind="period"><button data-v="l7">L7D</button><button data-v="l28">L28D</button><button data-v="weekly">Weekly</button><button data-v="monthly">Monthly</button></div></div>
       <div class="ctl"><span class="ctl-label">Show</span>
         <div class="seg" data-bind="metric"><button data-v="volume">Volume</button><button data-v="fees" id="feesMetricBtn">Fees</button></div></div>
       <div class="ctl" id="measureCtl" hidden><span class="ctl-label">Measure</span>
@@ -254,7 +254,7 @@ dialog li{ margin:6px 0; }
       <div class="ctl"><span class="ctl-label">Scale</span>
         <div class="seg" data-bind="layout"><button data-v="stacked">Dollars</button><button data-v="mix">Share of total</button></div></div>
       <div class="ctl" id="rangeCtl"><span class="ctl-label">Range</span>
-        <div class="seg" data-bind="range"><button data-v="all">Since Jan 2025</button><button data-v="2026">2026</button><button data-v="6">Last 6 months</button></div></div>
+        <div class="seg" data-bind="range"><button data-v="all">All</button><button data-v="2026">2026</button><button data-v="6">Last 6 months</button></div></div>
     </div>
     <div class="panel">
       <div class="readout" id="volReadout"></div>
@@ -401,20 +401,21 @@ const CAT_COLORS = { Combos:"#2F6B3A", Sports:"#8CC26E", Crypto:"#E3A33B", Commo
 const CAT_LABELS = { Weather:"Climate & weather" };
 const catLabel = c => CAT_LABELS[c] || c;
 const BLOCKS = ["monthly","weekly","monthlyUsd","monthlyFees","monthlyTakerFees","monthlyMakerFees","weeklyUsd","weeklyFees"];
+const DAILY_METRICS = ["contracts","usd","fees"];
 
 const Calc = {
   data:null,
-  setData(d){
-    BLOCKS.forEach(k => {
-      const block = d[k]; if(!block || !block.total) return;
-      const n = block.total.length, other = new Array(n).fill(0);
-      for(let i=0;i<n;i++){ let s = 0; CATS.forEach(c => { if(c !== "Other" && block[c]) s += block[c][i] || 0; }); other[i] = Math.max(0, (block.total[i]||0) - s); }
-      if(!block.Other) block.Other = other;
-      CATS.forEach(c => { if(!block[c]) block[c] = new Array(n).fill(0); });
+  prepare(d){
+    const blocks = BLOCKS.map(k => d[k]).concat(d.daily ? DAILY_METRICS.map(m => d.daily[m]) : []);
+    blocks.forEach(block => {
+      if(!block || !block.total) return;
+      CATS.forEach(c => { if(c !== "Other" && !block[c]) block[c] = block.total.map(t => t == null ? null : 0); });
+      if(!block.Other) block.Other = block.total.map((t, i) => t == null ? null : Math.max(0, t - CATS.reduce((a, c) => a + (c !== "Other" ? (block[c][i] || 0) : 0), 0)));
     });
-    this.data = d;
+    return d;
   },
-  hasFees(){ return !!(this.data.monthlyFees && this.data.monthlyFees.total); },
+  setData(d){ this.data = this.prepare(d); },
+  hasFees(){ const d = this.data; return !!((d.monthlyFees && d.monthlyFees.total.some(v => v != null)) || (d.daily && d.daily.fees)); },
   perpsDays(){
     const p = this.data.perps, out = [];
     if(!p || !p.kalshi) return out;
@@ -471,26 +472,52 @@ const store = {
   set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
   del(k){ try{ localStorage.removeItem(k); }catch(e){} }
 };
-const DEFAULT_STATE = () => ({ period:"monthly", metric:"volume", measure:"contracts", layout:"stacked", range:"all", hidden:[],
+const DEFAULT_STATE = () => ({ period:"l28", metric:"volume", measure:"contracts", layout:"stacked", range:"all", hidden:[],
   share:{ vs:"pm", basis:"contracts", haircut:"0" }, perps:{ gran:"weekly", bps:5 }, rev:{ otherRev:0, contra:0 } });
-let state = Object.assign(DEFAULT_STATE(), store.get("kvm-state-v2") || {});
+let state = Object.assign(DEFAULT_STATE(), store.get("kvm-state-v3") || {});
 ["share","perps","rev"].forEach(k => state[k] = Object.assign(DEFAULT_STATE()[k], state[k] || {}));
-const saveState = () => store.set("kvm-state-v2", state);
+const saveState = () => store.set("kvm-state-v3", state);
 
-function cloneSnapshot(){ return JSON.parse(JSON.stringify(SNAPSHOT)); }
+function cloneSnapshot(){ return Calc.prepare(JSON.parse(JSON.stringify(SNAPSHOT))); }
+/* Merge period by period: incoming periods replace the snapshot's, everything else is kept.
+   The pipeline only emits fully fetched periods, so a backfill in progress never shrinks history. */
+function mergeKeyed(base, inc, keysName, names){
+  const bk = base[keysName] || [], ik = inc[keysName] || [];
+  const keys = [...new Set([...bk, ...ik])].sort();
+  names.forEach(name => {
+    const bb = base[name], ib = inc[name];
+    if(!bb && !ib) return;
+    const out = {};
+    [...CATS, "total"].forEach(c => {
+      out[c] = keys.map(k => {
+        const ii = ik.indexOf(k);
+        if(ii >= 0 && ib) return (ib[c] && ib[c][ii] != null) ? ib[c][ii] : (ib.total[ii] == null ? null : 0);
+        const bi = bk.indexOf(k);
+        return (bi >= 0 && bb && bb[c] && bb[c][bi] != null) ? bb[c][bi] : null;
+      });
+    });
+    base[name] = out;
+  });
+  base[keysName] = keys;
+}
 function mergeData(base, inc){
   if(!inc || typeof inc !== "object") throw new Error("File is not a JSON object.");
-  const out = base, okArr = (a, n) => Array.isArray(a) && (n === undefined || a.length === n);
+  const okArr = (a, n) => Array.isArray(a) && a.length === n;
   if(inc.months && inc.monthly){
     if(!okArr(inc.monthly.total, inc.months.length)) throw new Error("monthly.total must have one value per month.");
-    out.months = inc.months; out.monthly = inc.monthly; out.partialMonths = inc.partialMonths || {};
-    ["monthlyUsd","monthlyFees","monthlyTakerFees","monthlyMakerFees"].forEach(k => { if(inc[k] && okArr(inc[k].total, inc.months.length)) out[k] = inc[k]; else delete out[k]; });
+    const partial = {};
+    Object.entries(base.partialMonths || {}).forEach(([k, v]) => { if(!inc.months.includes(k)) partial[k] = v; });
+    mergeKeyed(base, inc, "months", ["monthly","monthlyUsd","monthlyFees","monthlyTakerFees","monthlyMakerFees"]);
+    base.partialMonths = Object.assign(partial, inc.partialMonths || {});
   }
   if(inc.weeks && inc.weekly && inc.weeks.length){
     if(!okArr(inc.weekly.total, inc.weeks.length)) throw new Error("weekly.total must have one value per week.");
-    out.weeks = inc.weeks; out.weekly = inc.weekly;
-    ["weeklyUsd","weeklyFees"].forEach(k => { if(inc[k] && okArr(inc[k].total, inc.weeks.length)) out[k] = inc[k]; else delete out[k]; });
+    mergeKeyed(base, inc, "weeks", ["weekly","weeklyUsd","weeklyFees"]);
   }
+  if(Array.isArray(inc.days) && inc.daily && inc.daily.contracts && okArr(inc.daily.contracts.total, inc.days.length)){
+    base.days = inc.days; base.daily = inc.daily;
+  }
+  if(inc.coverage) base.coverage = inc.coverage;
   if(inc.venues && inc.venues.months){
     const bv = base.venues, iv = inc.venues, months = [...new Set([...(bv ? bv.months : []), ...iv.months])].sort();
     const pick = (venue, basis, m) => {
@@ -500,7 +527,7 @@ function mergeData(base, inc){
       return y == null ? 0 : y;
     };
     const nv = { months }; ["kalshi","polymarket","polymarketUS"].forEach(v => { nv[v] = { contracts: months.map(m => pick(v,"contracts",m)), dollars: months.map(m => pick(v,"dollars",m)) }; });
-    out.venues = nv;
+    base.venues = nv;
   }
   if(inc.perps && inc.perps.start && Array.isArray(inc.perps.kalshi)){
     const map = {};
@@ -511,13 +538,13 @@ function mergeData(base, inc){
     if(days.length){
       const k = [], h = [], end = Date.parse(days[days.length-1] + "T00:00:00Z");
       for(let t = Date.parse(days[0] + "T00:00:00Z"); t <= end; t += 86400000){ const r = map[new Date(t).toISOString().slice(0,10)]; k.push(r ? r[0] : null); h.push(r ? r[1] : null); }
-      out.perps = { start: days[0], kalshi: k, hyperliquid: h, mix24h: inc.perps.mix24h || (base.perps && base.perps.mix24h) };
+      base.perps = { start: days[0], kalshi: k, hyperliquid: h, mix24h: inc.perps.mix24h || (base.perps && base.perps.mix24h) };
     }
   }
-  if(inc.asOf) out.asOf = inc.asOf;
-  if(inc.feeMethod) out.feeMethod = inc.feeMethod;
-  out.source = inc.source || "file";
-  return out;
+  if(inc.asOf && inc.asOf > base.asOf) base.asOf = inc.asOf;
+  if(inc.feeMethod) base.feeMethod = inc.feeMethod;
+  base.source = inc.source || "file";
+  return base;
 }
 store.del("kvm-deck");   /* clear deck figures an earlier version may have stored */
 const loaded = store.get("kvm-data-v2");
@@ -576,95 +603,177 @@ const tooltipBase = t => ({ backgroundColor:t.surface, titleColor:t.ink, bodyCol
   titleFont:{ family:"Archivo", weight:"600" }, bodyFont:{ family:"Archivo" }, footerFont:{ family:"Archivo", weight:"600" }, boxPadding:4, usePointStyle:true });
 
 /* ---------- Volume ---------- */
-function volumeSeries(){
+const DAY = 86400000;
+const isoDay = t => new Date(t).toISOString().slice(0,10);
+const dayNum = iso => Math.round(Date.parse(iso + "T00:00:00Z") / DAY);
+function emptyCats(){ const o = {}; [...CATS, "total"].forEach(c => o[c] = []); return o; }
+/* Trailing windows. From the daily trade tape when loaded (one point per day); until then
+   from complete Monday–Sunday weeks, so windows end on Sundays. */
+function rollingSeries(win){
   const d = Calc.data;
-  if(state.period === "monthly"){
-    let idx = d.months.map((m,i) => i);
-    if(state.range === "2026") idx = idx.filter(i => d.months[i] >= "2026-01");
-    if(state.range === "6") idx = idx.slice(-6);
-    const keys = idx.map(i => d.months[i]);
-    return { labels: keys.map(k => monthLabel(k)), keys, idx, block:d.monthly, usd:d.monthlyUsd, fee:d.monthlyFees, monthly:true };
+  if(d.days && d.daily && d.days.length >= win){
+    const t = d.days.map(dayNum), ends = [];
+    for(let j = win-1; j < d.days.length; j++) if(t[j] - t[j-win+1] === win-1) ends.push(j);
+    if(ends.length){
+      const roll = b => { if(!b) return null; const o = emptyCats();
+        [...CATS, "total"].forEach(c => { const a = b[c] || [], p = [0]; a.forEach(v => p.push(p[p.length-1] + (v || 0))); o[c] = ends.map(j => p[j+1] - p[j-win+1]); });
+        return o; };
+      return { keys: ends.map(j => d.days[j]), block: roll(d.daily.contracts), usd: roll(d.daily.usd), fee: roll(d.daily.fees), dense: true, basis: "daily" };
+    }
   }
-  const keys = d.weeks.slice();
-  return { labels: keys.map(dayLabel), keys, idx: keys.map((k,i) => i), block:d.weekly, usd:d.weeklyUsd, fee:d.weeklyFees, monthly:false };
+  const n = win / 7, W = d.weeks || [], tw = W.map(dayNum), ends = [];
+  for(let k = n-1; k < W.length; k++) if(tw[k] - tw[k-n+1] === 7*(n-1)) ends.push(k);
+  const roll = b => { if(!b) return null; const o = emptyCats();
+    [...CATS, "total"].forEach(c => { o[c] = ends.map(k => { let s = 0; for(let q = k-n+1; q <= k; q++){ const v = b[c] ? b[c][q] : null; if(v == null) return null; s += v; } return s; }); });
+    return o; };
+  const fee = roll(d.weeklyFees), usd = roll(d.weeklyUsd);
+  return { keys: ends.map(k => isoDay(Date.parse(W[k] + "T00:00:00Z") + 6*DAY)), block: roll(d.weekly),
+           usd: usd && usd.total.some(v => v != null) ? usd : null, fee: fee && fee.total.some(v => v != null) ? fee : null, dense: false, basis: "weekly" };
+}
+function rollLabel(iso, withYear){ const d = new Date(iso + "T00:00:00Z"); return MONTHS[d.getUTCMonth()] + " " + d.getUTCDate() + (withYear ? " ’" + String(d.getUTCFullYear()).slice(2) : ""); }
+function volumeSeries(){
+  const d = Calc.data, p = state.period;
+  let s;
+  if(p === "l7" || p === "l28"){
+    const win = p === "l7" ? 7 : 28, r = rollingSeries(win);
+    s = Object.assign(r, { kind:"rolling", win, monthly:false });
+  } else if(p === "monthly"){
+    s = { keys: d.months.slice(), block: d.monthly, usd: d.monthlyUsd, fee: d.monthlyFees, kind:"monthly", monthly:true };
+  } else {
+    s = { keys: d.weeks.slice(), block: d.weekly, usd: d.weeklyUsd, fee: d.weeklyFees, kind:"weekly", monthly:false };
+  }
+  // Only periods that have the chosen measure.
+  const src = (state.metric === "fees" && s.fee) ? s.fee : (state.metric !== "fees" && state.measure === "usd" && s.usd) ? s.usd : s.block;
+  let idx = s.keys.map((k, i) => i).filter(i => src && src.total[i] != null);
+  const ranged = s.kind === "monthly" || (s.kind === "rolling" && s.dense);
+  if(ranged && state.range === "2026") idx = idx.filter(i => s.keys[i] >= "2026-01");
+  if(ranged && state.range === "6") idx = s.kind === "monthly" ? idx.slice(-6) : idx.filter(i => dayNum(s.keys[i]) > dayNum(s.keys[s.keys.length-1]) - 183);
+  const multiYear = idx.length && s.keys[idx[0]].slice(0,4) !== s.keys[idx[idx.length-1]].slice(0,4);
+  s.idx = idx; s.ranged = ranged;
+  s.labels = idx.map(i => s.kind === "monthly" ? monthLabel(s.keys[i]) : s.kind === "weekly" ? dayLabel(s.keys[i]) : rollLabel(s.keys[i], s.dense && multiYear));
+  return s;
 }
 function metricOf(s){ return (state.metric === "fees" && s.fee) ? "fees" : "volume"; }
 function catValue(s, cat, i){
-  if(metricOf(s) === "fees") return s.fee[cat][i] || 0;
-  if(state.measure === "usd" && s.usd) return s.usd[cat][i] || 0;
-  return s.block[cat][i] || 0;
+  const b = metricOf(s) === "fees" ? s.fee : (state.measure === "usd" && s.usd ? s.usd : s.block);
+  return (b && b[cat] && b[cat][i] != null) ? b[cat][i] : 0;
 }
+function priorIndex(s, last){
+  if(s.kind === "rolling"){ const k = isoDay(Date.parse(s.keys[last] + "T00:00:00Z") - s.win*DAY); const i = s.keys.indexOf(k); return i >= 0 ? i : null; }
+  const pos = s.idx.indexOf(last); return pos > 0 ? s.idx[pos-1] : null;
+}
+function hexA(c, a){ const n = parseInt(c.slice(1), 16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
 function renderVolume(){
   const s = volumeSeries(), t = chartTheme(), metric = metricOf(s);
-  document.getElementById("rangeCtl").style.display = s.monthly ? "" : "none";
+  document.getElementById("rangeCtl").style.display = s.ranged ? "" : "none";
   document.getElementById("measureCtl").hidden = !(s.usd && metric === "volume");
-  const fb = document.getElementById("feesMetricBtn"); fb.disabled = !s.fee; fb.title = s.fee ? "" : "Load a pipeline file to see fees priced from the trade tape";
-  const last = s.idx[s.idx.length-1];
+  const fb = document.getElementById("feesMetricBtn"); fb.disabled = !s.fee; fb.title = s.fee ? "" : "Fees appear once the trade tape is loaded";
+  if(!s.idx.length){
+    if(charts.volChart){ charts.volChart.destroy(); delete charts.volChart; }
+    document.getElementById("volReadout").innerHTML = `<div class="sub">No complete ${s.kind === "rolling" ? "L" + s.win + "D window" : "period"} available for this view yet.</div>`;
+    document.getElementById("chips").innerHTML = ""; document.getElementById("volTable").innerHTML = ""; return;
+  }
+  const last = s.idx[s.idx.length-1], prior = priorIndex(s, last);
   const order = CATS.slice().sort((a,b) => catValue(s,b,last) - catValue(s,a,last));
   const hidden = new Set(state.hidden), visible = order.filter(c => !hidden.has(c));
   document.getElementById("chips").innerHTML = order.map((c, n) => `<button class="chip" data-cat="${c}" aria-pressed="${!hidden.has(c)}"><span class="rank">${n+1}</span><span class="sw" style="background:${CAT_COLORS[c]}"></span>${catLabel(c)}<span class="val">${fmtUsd(catValue(s,c,last))}</span></button>`).join("");
-  const totals = s.idx.map(i => visible.reduce((a,c) => a + catValue(s,c,i), 0));
-  const datasets = visible.map(c => ({ label:catLabel(c), data: s.idx.map((i,k) => { const v = catValue(s,c,i); return state.layout === "mix" ? (totals[k] ? v/totals[k]*100 : 0) : v; }),
-    backgroundColor:CAT_COLORS[c], borderWidth:0, maxBarThickness:46, categoryPercentage:.82, barPercentage:.92 }));
-  mkChart("volChart", { type:"bar", data:{ labels:s.labels, datasets },
+  const sumAt = i => visible.reduce((a,c) => a + catValue(s,c,i), 0);
+  const totals = s.idx.map(sumAt), mix = state.layout === "mix";
+  const val = (c, i, k) => { const v = catValue(s,c,i); return mix ? (totals[k] ? v/totals[k]*100 : 0) : v; };
+  const area = s.kind === "rolling" && s.dense;
+  const datasets = visible.map((c, n) => area
+    ? { type:"line", label:catLabel(c), data: s.idx.map((i,k) => val(c,i,k)), backgroundColor: hexA(CAT_COLORS[c], .85), borderColor: CAT_COLORS[c], borderWidth: 1, pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: n === 0 ? "origin" : "-1" }
+    : { type:"bar", label:catLabel(c), data: s.idx.map((i,k) => val(c,i,k)), backgroundColor: CAT_COLORS[c], borderWidth: 0, maxBarThickness: 46, categoryPercentage: .82, barPercentage: .92 });
+  mkChart("volChart", { type: area ? "line" : "bar", data:{ labels: s.labels, datasets },
     options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false },
-      scales: baseScales(t, state.layout === "mix" ? v => v + "%" : v => fmtUsd(v), { stacked:true, max: state.layout === "mix" ? 100 : undefined }),
+      scales: baseScales(t, mix ? v => v + "%" : v => fmtUsd(v), { stacked:true, max: mix ? 100 : undefined }),
       plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { itemSort:(a,b) => b.datasetIndex - a.datasetIndex,
-        callbacks:{ label:c => ` ${c.dataset.label}: ${state.layout === "mix" ? c.parsed.y.toFixed(1)+"%" : fmtUsd(c.parsed.y)}`, footer:items => "Total shown: " + fmtUsd(totals[items[0].dataIndex]) } }) } } });
-  const lastKey = s.keys[s.keys.length-1], partial = s.monthly && Calc.data.partialMonths[lastKey];
+        callbacks:{ title: items => s.kind === "rolling" ? `L${s.win}D ending ${rollLabel(s.keys[s.idx[items[0].dataIndex]], true)}` : items[0].label,
+          label:c => ` ${c.dataset.label}: ${mix ? c.parsed.y.toFixed(1)+"%" : fmtUsd(c.parsed.y)}`, footer:items => "Total shown: " + fmtUsd(totals[items[0].dataIndex]) } }) } } });
+
+  const partial = s.kind === "monthly" && Calc.data.partialMonths[s.keys[last]];
   const word = metric === "fees" ? "fees priced from the tape" : (state.measure === "usd" && s.usd ? "dollars paid" : "volume");
-  const tLast = totals[totals.length-1], tPrev = totals[totals.length-2], top = visible[0];
+  const tLast = sumAt(last), tPrior = prior == null ? null : sumAt(prior), top = visible[0];
+  const head = s.kind === "rolling" ? `L${s.win}D to ${rollLabel(s.keys[last], true)}` : s.monthly ? monthLabel(s.keys[last], true) + (partial ? " (" + partial + ")" : "") : "Week of " + dayLabel(s.keys[last]);
+  const vsWord = s.kind === "rolling" ? `prior ${s.win} days` : s.monthly ? "prior month" : "prior week";
   document.getElementById("volReadout").innerHTML = visible.length ? `
-    <div><div class="sub">${s.monthly ? monthLabel(lastKey, true) + (partial ? " (" + partial + ")" : "") : "Week of " + dayLabel(lastKey)}, ${word}${hidden.size ? " (filtered)" : ""}</div><div class="big">${fmtUsd(tLast)}</div></div>
-    <div><div class="sub">vs prior ${s.monthly ? "month" : "week"}</div><div class="big">${partial ? '<span class="sub" style="font-size:15px">partial month</span>' : (fmtChange(tLast, tPrev) || "–")}</div></div>
+    <div><div class="sub">${head}, ${word}${hidden.size ? " (filtered)" : ""}</div><div class="big">${fmtUsd(tLast)}</div></div>
+    <div><div class="sub">vs ${vsWord}</div><div class="big">${partial ? '<span class="sub" style="font-size:15px">partial month</span>' : (tPrior ? fmtChange(tLast, tPrior) : "–")}</div></div>
+    ${s.kind === "rolling" && metric === "fees" ? `<div><div class="sub">Annualized</div><div class="big">${fmtUsd(tLast * 365 / s.win)}</div></div>` : ""}
     <div><div class="sub">Largest category</div><div class="big">${catLabel(top)} <span class="sub" style="font-size:15px">${fmtPct(catValue(s,top,last)/tLast)}</span></div></div>` :
     `<div class="sub">All categories are hidden. Pick one above or choose a preset.</div>`;
-  const n = Math.min(6, s.idx.length), cols = s.idx.slice(-n), colKeys = s.keys.slice(-n);
-  const head = `<thead><tr><th>${metric === "fees" ? "Fees" : "Volume"}</th>${colKeys.map(k => `<th>${s.monthly ? monthLabel(k) : dayLabel(k)}</th>`).join("")}<th>Share, latest</th>${metric === "fees" ? "<th>Bps of face, latest</th>" : ""}</tr></thead>`;
-  const rows = visible.map(c => `<tr><td><span class="swatch-cell"><span class="sw" style="background:${CAT_COLORS[c]}"></span>${catLabel(c)}</span></td>${cols.map(i => `<td>${fmtUsd(catValue(s,c,i))}</td>`).join("")}<td>${fmtPct(catValue(s,c,last)/tLast,1)}</td>${metric === "fees" ? `<td>${s.block[c][last] ? (s.fee[c][last]/s.block[c][last]*1e4).toFixed(1) : "–"}</td>` : ""}</tr>`).join("");
-  const tot = `<tr class="total"><td>Total shown</td>${cols.map(i => `<td>${fmtUsd(visible.reduce((a,c) => a + catValue(s,c,i), 0))}</td>`).join("")}<td>100%</td>${metric === "fees" ? "<td></td>" : ""}</tr>`;
-  document.getElementById("volTable").innerHTML = head + "<tbody>" + rows + tot + "</tbody>";
-  document.getElementById("volTableTitle").textContent = s.monthly ? "Last six months" : "Last six weeks";
+
+  let html;
+  if(s.kind === "rolling"){
+    const P = prior;
+    html = `<thead><tr><th>${metric === "fees" ? "Fees" : "Volume"}</th><th>L${s.win}D</th><th>Prior ${s.win} days</th><th>Change</th><th>Share</th>${metric === "fees" ? "<th>Bps of face</th>" : ""}</tr></thead><tbody>` +
+      visible.map(c => { const v = catValue(s,c,last), pv = P == null ? null : catValue(s,c,P);
+        return `<tr><td><span class="swatch-cell"><span class="sw" style="background:${CAT_COLORS[c]}"></span>${catLabel(c)}</span></td><td>${fmtUsd(v)}</td><td>${fmtUsd(pv)}</td><td>${pv ? fmtChange(v, pv) : "–"}</td><td>${fmtPct(v/tLast,1)}</td>${metric === "fees" ? `<td>${s.block[c][last] ? (s.fee[c][last]/s.block[c][last]*1e4).toFixed(1) : "–"}</td>` : ""}</tr>`; }).join("") +
+      `<tr class="total"><td>Total shown</td><td>${fmtUsd(tLast)}</td><td>${fmtUsd(tPrior)}</td><td>${tPrior ? fmtChange(tLast, tPrior) : "–"}</td><td>100%</td>${metric === "fees" ? "<td></td>" : ""}</tr></tbody>`;
+    document.getElementById("volTableTitle").textContent = `L${s.win}D vs the ${s.win} days before`;
+  } else {
+    const n = Math.min(6, s.idx.length), cols = s.idx.slice(-n);
+    html = `<thead><tr><th>${metric === "fees" ? "Fees" : "Volume"}</th>${cols.map(i => `<th>${s.monthly ? monthLabel(s.keys[i]) : dayLabel(s.keys[i])}</th>`).join("")}<th>Share, latest</th>${metric === "fees" ? "<th>Bps of face, latest</th>" : ""}</tr></thead><tbody>` +
+      visible.map(c => `<tr><td><span class="swatch-cell"><span class="sw" style="background:${CAT_COLORS[c]}"></span>${catLabel(c)}</span></td>${cols.map(i => `<td>${fmtUsd(catValue(s,c,i))}</td>`).join("")}<td>${fmtPct(catValue(s,c,last)/tLast,1)}</td>${metric === "fees" ? `<td>${s.block[c][last] ? (s.fee[c][last]/s.block[c][last]*1e4).toFixed(1) : "–"}</td>` : ""}</tr>`).join("") +
+      `<tr class="total"><td>Total shown</td>${cols.map(i => `<td>${fmtUsd(sumAt(i))}</td>`).join("")}<td>100%</td>${metric === "fees" ? "<td></td>" : ""}</tr></tbody>`;
+    document.getElementById("volTableTitle").textContent = s.monthly ? "Last six months" : "Last six weeks";
+  }
+  document.getElementById("volTable").innerHTML = html;
   document.getElementById("volTableNote").textContent = metric === "fees" ? "Taker plus maker fees, priced fill by fill" : (state.measure === "usd" && s.usd ? "Dollars actually paid" : "Contracts at $1 face value");
   document.getElementById("volSrc").textContent = "Source: " + sourceLabel();
-  document.getElementById("volNote").innerHTML = (s.monthly ? (partial ? `* Latest month is partial (${partial}). ` : "") : "Weeks run Monday to Sunday. ") +
-    "Combos are Kalshi’s multi-leg parlays; their contracts usually trade for a few cents, so they dominate face-value volume but not dollars paid or fees. “Other” is everything outside the named categories.";
+  const notes = [];
+  if(s.kind === "rolling") notes.push(`Each point sums the ${s.win} days ending on that date, so every window covers the same number of days and weekdays; the change compares with the ${s.win} days before.`);
+  if(s.kind === "rolling" && s.basis === "weekly") notes.push("Until the daily trade tape is loaded, windows are built from complete Monday–Sunday weeks, so points fall on Sundays.");
+  if(s.kind === "monthly" && partial) notes.push(`* Latest month is partial (${partial}).`);
+  if(s.kind === "weekly") notes.push("Weeks run Monday to Sunday.");
+  notes.push("Combos are Kalshi’s multi-leg parlays; their contracts usually trade for a few cents, so they dominate face-value volume but not dollars paid or fees. “Other” is everything outside the named categories.");
+  document.getElementById("volNote").innerHTML = notes.join(" ");
 }
 function sourceLabel(){ const d = Calc.data; return (d.source && d.source !== "snapshot") ? d.source : "TickerTracker, compiled from Kalshi’s published daily market data (snapshot)"; }
 
 /* ---------- Fees & revenue ---------- */
+function rollingFees(win){
+  const d = Calc.data; if(!d.days || !d.daily || !d.daily.fees || d.days.length < win) return null;
+  const n = d.days.length, t = d.days.map(dayNum);
+  if(t[n-1] - t[n-win] !== win-1) return null;
+  let f = 0, v = 0; for(let j = n-win; j < n; j++){ f += d.daily.fees.total[j] || 0; v += d.daily.contracts.total[j] || 0; }
+  let pf = null; if(n >= 2*win && t[n-win-1] - t[n-2*win] === win-1){ pf = 0; for(let j = n-2*win; j < n-win; j++) pf += d.daily.fees.total[j] || 0; }
+  return { fees: f, vol: v, prior: pf, end: d.days[n-1] };
+}
 function renderFees(){
-  const el = document.getElementById("feesBody");
-  if(!Calc.hasFees()){
+  const el = document.getElementById("feesBody"), d = Calc.data;
+  const feeIdx = d.monthlyFees ? d.months.map((m,i) => i).filter(i => d.monthlyFees.total[i] != null) : [];
+  const r7 = rollingFees(7), r28 = rollingFees(28);
+  const cov = d.coverage;
+  const progress = cov ? `<p class="src">Trade tape fetched: ${cov.fetched.toLocaleString()} of ${cov.total.toLocaleString()} days${cov.complete ? "" : ", backfill in progress, newest days first"}.</p>` : "";
+  if(!feeIdx.length && !r7){
     if(charts.feesChart){ charts.feesChart.destroy(); delete charts.feesChart; }
-    el.innerHTML = `<div class="empty"><h3>No trade-level data loaded yet</h3>
-      <p>Fees here come only from pricing Kalshi’s actual fills. The built-in snapshot has volume by category but not prices per fill, so this tab stays empty rather than show an estimate.</p>
-      <ol><li>Run <code>python3 kalshi_pipeline.py --start 2025-01-01</code> somewhere with internet access. It resumes where it left off, so the backfill can run in pieces.</li>
-      <li>Load the <code>kalshi_dashboard_data.json</code> it writes with <em>Load data file</em>.</li></ol></div>`;
+    el.innerHTML = `<div class="empty"><h3>Fees fill in automatically</h3>
+      <p>On the GitHub Pages version of this dashboard, a GitHub Actions job prices Kalshi’s trade tape and publishes it here. The backfill works newest-first and publishes about every two hours, so L7D and L28D fees appear first and older months fill in over the following days. Nothing is estimated in the meantime.</p>${progress}</div>`;
     return;
   }
-  const d = Calc.data, t = chartTheme(), idx = d.months.map((m,i) => i);
-  const rows = idx.map(i => Calc.feesMonth(i, +state.perps.bps, +state.rev.otherRev, +state.rev.contra));
+  const t = chartTheme(), rows = feeIdx.map(i => Calc.feesMonth(i, +state.perps.bps, +state.rev.otherRev, +state.rev.contra));
+  const kpi = (k, v) => `<div><div class="sub">${k}</div><div class="big">${v}</div></div>`;
+  let readout = "";
+  if(r7) readout += kpi(`L7D fees to ${rollLabel(r7.end, true)}`, fmtUsd(r7.fees)) + kpi("vs prior 7 days", r7.prior ? fmtChange(r7.fees, r7.prior) : "–");
+  if(r28) readout += kpi("L28D fees", fmtUsd(r28.fees)) + kpi("L28D annualized", fmtUsd(r28.fees * 365 / 28)) + kpi("L28D bps of face", (r28.fees / r28.vol * 1e4).toFixed(1));
+  if(!readout && rows.length){ const full = rows.filter(r => !d.partialMonths[r.ym]).pop() || rows[rows.length-1];
+    readout = kpi(`${monthLabel(full.ym, true)} event-contract fees`, fmtUsd(full.fees)) + kpi("Bps of face volume", full.bpsFace == null ? "–" : full.bpsFace.toFixed(1)); }
   el.innerHTML = `
-    <div class="panel"><div class="readout" id="feesReadout"></div>
-      <div class="chart-box"><canvas id="feesChart" aria-label="Fees by category per month"></canvas></div>
-      <p class="src">Method: ${d.feeMethod || "per-fill pricing with Kalshi’s fee schedule"}. Source: ${sourceLabel()}.</p></div>
-    <div class="panel"><div class="section-title"><h3>Revenue build</h3><p>Lines below trading fees are your inputs; nothing is fitted to the deck</p></div>
+    <div class="panel"><div class="readout">${readout}</div>
+      ${rows.length ? `<div class="chart-box"><canvas id="feesChart" aria-label="Fees by category per month"></canvas></div>` : `<p class="note">Monthly totals appear once a whole month of trades has been fetched. Use L7D or L28D on the Volume tab, with <em>Fees</em>, for the latest windows.</p>`}
+      <p class="src">Method: ${d.feeMethod || "per-fill pricing with Kalshi’s fee schedule"}. Source: ${sourceLabel()}.</p>${progress}</div>
+    ${rows.length ? `<div class="panel"><div class="section-title"><h3>Revenue build</h3><p>Lines below trading fees are your inputs; nothing is fitted</p></div>
       <div class="assume">
         <div class="field"><label>Perps fee rate</label><div class="num"><input type="number" step="0.5" min="0" data-perps-bps value="${state.perps.bps}"><span>bps</span></div><div class="hint">Your assumption until perps fills are priced</div></div>
         <div class="field"><label>Other revenue</label><div class="num"><input type="number" step="0.5" data-rev="otherRev" value="${state.rev.otherRev}"><span>%</span></div><div class="hint">Interest, processing, MM P&amp;L, as % of trading fees</div></div>
         <div class="field"><label>Contra revenue</label><div class="num"><input type="number" step="0.5" min="0" data-rev="contra" value="${state.rev.contra}"><span>%</span></div><div class="hint">MM and broker payouts, rebates, promos, as % of gross</div></div>
       </div>
-      <div class="table-scroll" id="feesScroll" style="margin-top:16px"><table class="data" id="feesTable"></table></div></div>`;
-  const last = rows[rows.length-1], full = rows.filter(r => !d.partialMonths[r.ym]).pop() || last;
-  document.getElementById("feesReadout").innerHTML = `
-    <div><div class="sub">${monthLabel(full.ym, true)} event-contract fees</div><div class="big">${fmtUsd(full.fees)}</div></div>
-    <div><div class="sub">Bps of face volume</div><div class="big">${full.bpsFace == null ? "–" : full.bpsFace.toFixed(1)}</div></div>
-    <div><div class="sub">Of dollars paid</div><div class="big">${fmtPct(full.pctPaid, 2)}</div></div>
-    <div><div class="sub">Maker share of fees</div><div class="big">${full.maker == null ? "–" : fmtPct(full.maker / full.fees)}</div></div>
-    <div><div class="sub">Annualized run rate</div><div class="big">${fmtUsd(full.fees * 12)}</div></div>`;
+      <div class="table-scroll" id="feesScroll" style="margin-top:16px"><table class="data" id="feesTable"></table></div></div>` : ""}`;
+  if(!rows.length) return;
+  const lastI = feeIdx[feeIdx.length-1];
   mkChart("feesChart", { type:"bar", data:{ labels: rows.map(r => monthLabel(r.ym)), datasets: [
-      ...CATS.slice().sort((a,b) => d.monthlyFees[b][d.months.length-1] - d.monthlyFees[a][d.months.length-1]).map(c => ({ type:"bar", label:catLabel(c), data: idx.map(i => d.monthlyFees[c][i]), backgroundColor:CAT_COLORS[c], borderWidth:0, maxBarThickness:46, stack:"f" })),
+      ...CATS.slice().sort((a,b) => (d.monthlyFees[b][lastI]||0) - (d.monthlyFees[a][lastI]||0)).map(c => ({ type:"bar", label:catLabel(c), data: feeIdx.map(i => d.monthlyFees[c][i]), backgroundColor:CAT_COLORS[c], borderWidth:0, maxBarThickness:46, stack:"f" })),
       { type:"line", label:"Bps of face", data: rows.map(r => r.bpsFace), yAxisID:"y1", borderColor:t.ink, backgroundColor:t.ink, borderWidth:2, pointRadius:2, tension:.25 } ] },
     options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false },
       scales: Object.assign(baseScales(t, v => fmtUsd(v), { stacked:true }), { y1:{ position:"right", beginAtZero:true, grid:{ display:false }, border:{ display:false }, ticks:{ color:t.ink2, callback:v => v + " bps", maxTicksLimit:6 } } }),
@@ -675,7 +784,6 @@ function renderFees(){
       if(v == null) return "<td>–</td>"; if(cls === "bps") return `<td>${v.toFixed(1)}</td>`; if(cls === "neg") return `<td>${v ? "(" + fmtUsd(v) + ")" : "–"}</td>`; return `<td>${fmtUsd(v)}</td>`; }).join("")}</tr>`).join("") + "</tbody>";
   const sc = document.getElementById("feesScroll"); requestAnimationFrame(() => { sc.scrollLeft = sc.scrollWidth; });
 }
-
 /* ---------- Share vs Polymarket ---------- */
 function renderShare(){
   const t = chartTheme(), rows = Calc.shareSeries(state.share).filter(r => r.kalshi != null);
@@ -741,7 +849,8 @@ function updateStatus(){
   document.getElementById("asof").textContent = `${MONTHS[dt.getUTCMonth()]} ${dt.getUTCDate()}, ${dt.getUTCFullYear()}`;
   const fromFile = d.source && d.source !== "snapshot";
   document.getElementById("resetData").hidden = !fromFile;
-  document.getElementById("dataStatus").textContent = fromFile ? `Using loaded file: ${d.source}` : "Using the built-in snapshot (no fee data)";
+  const cov = d.coverage && !d.coverage.complete ? `, backfill ${d.coverage.fetched.toLocaleString()} of ${d.coverage.total.toLocaleString()} days` : "";
+  document.getElementById("dataStatus").textContent = fromFile ? `Using ${d.source}${cov}` : "Using the built-in snapshot (no fee data)";
 }
 document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest(".tab"); if(b) show(b.dataset.view); });
 document.querySelector(".tabs").addEventListener("keydown", e => {

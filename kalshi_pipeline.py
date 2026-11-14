@@ -296,26 +296,45 @@ def rollup(days, keyfn, keys):
     return blocks
 
 
-def build_output(days, perps_hist, last_day):
+def build_output(days, perps_hist, last_day, first_day=None):
+    """Only periods whose every day was fetched are emitted, so a backfill in progress
+    never shows a partial month or week as if it were complete."""
     days = sorted(days, key=lambda d: d["day"])
     out = {"source": "Kalshi trade tape, fees from Kalshi's fee schedule", "asOf": last_day.isoformat(),
            "feeMethod": "per fill: 0.07 x M x C x P x (1-P) taker; 0.0175 / 0.035 x M x C x P x (1-P) maker; rounding " +
                         (days[-1]["rounding"] if days else "centicent")}
     if days:
-        months = sorted({month_key(d["day"]) for d in days})
-        m = rollup(days, month_key, months)
+        have = {d["day"] for d in days}
+        first = first_day or dt.date.fromisoformat(days[0]["day"])
+        span = [(first + dt.timedelta(days=k)).isoformat() for k in range((last_day - first).days + 1)]
+        out["coverage"] = {"first": first.isoformat(), "last": last_day.isoformat(), "fetched": sum(x in have for x in span),
+                           "total": len(span), "complete": all(x in have for x in span)}
+        # Daily block (fetched days only; gaps allowed) for L7D / L28D.
+        dd = rollup(days, lambda x: x, [d["day"] for d in days])
+        out["days"] = [d["day"] for d in days]
+        out["daily"] = {"contracts": dd["contracts"],
+                        "usd": dd["usd"],
+                        "fees": {c: [round(a + b, 4) for a, b in zip(dd["taker_fees"][c], dd["maker_fees"][c])] for c in dd["taker_fees"]}}
+        # Months: every day from the 1st (through last_day for the current month) fetched.
+        months = []
+        for ym in sorted({x[:7] for x in span}):
+            md = [x for x in span if x[:7] == ym]
+            if md[0].endswith("-01") and all(x in have for x in md):
+                months.append(ym)
         partial = {}
-        if last_day.month == (last_day + dt.timedelta(days=1)).month:
+        if months and months[-1] == last_day.strftime("%Y-%m") and last_day.month == (last_day + dt.timedelta(days=1)).month:
             partial[months[-1]] = f"{last_day.strftime('%b')} 1–{last_day.day}"
-        complete_weeks = sorted({week_key(d["day"]) for d in days
-                                 if dt.date.fromisoformat(week_key(d["day"])) + dt.timedelta(days=6) <= last_day})[-12:]
-        w = rollup(days, week_key, complete_weeks)
-        fees_m = {c: [a + b for a, b in zip(m["taker_fees"][c], m["maker_fees"][c])] for c in m["taker_fees"]}
-        fees_w = {c: [a + b for a, b in zip(w["taker_fees"][c], w["maker_fees"][c])] for c in w["taker_fees"]}
+        # Weeks: complete Monday-to-Sunday weeks with all seven days fetched.
+        weeks = sorted({week_key(x) for x in have
+                        if dt.date.fromisoformat(week_key(x)) + dt.timedelta(days=6) <= last_day
+                        and all((dt.date.fromisoformat(week_key(x)) + dt.timedelta(days=k)).isoformat() in have for k in range(7))})
+        m = rollup(days, month_key, months)
+        w = rollup(days, week_key, weeks)
+        fees_m = {c: [round(a + b, 4) for a, b in zip(m["taker_fees"][c], m["maker_fees"][c])] for c in m["taker_fees"]}
+        fees_w = {c: [round(a + b, 4) for a, b in zip(w["taker_fees"][c], w["maker_fees"][c])] for c in w["taker_fees"]}
         out.update(months=months, partialMonths=partial, monthly=m["contracts"], monthlyUsd=m["usd"],
                    monthlyFees=fees_m, monthlyTakerFees=m["taker_fees"], monthlyMakerFees=m["maker_fees"],
-                   monthlyTrades=m["trades"], weeks=complete_weeks, weekly=w["contracts"], weeklyUsd=w["usd"],
-                   weeklyFees=fees_w)
+                   weeks=weeks, weekly=w["contracts"], weeklyUsd=w["usd"], weeklyFees=fees_w)
     if perps_hist:
         ds = sorted(perps_hist)
         start, end = dt.date.fromisoformat(ds[0]), dt.date.fromisoformat(ds[-1])
@@ -374,10 +393,9 @@ def main(argv=None, session=None, today=None):
         first = dt.date.fromisoformat(json.load(open(bf_path))["start"])
     else:
         first = last - dt.timedelta(days=2)
-    # Yesterday first so the dashboard stays current, then fill any gaps oldest to newest.
-    todo = [last] + [first + dt.timedelta(days=k) for k in range((last - first).days)]
-    todo = [d for i, d in enumerate(todo) if d not in todo[:i]
-            and (a.refetch or not os.path.exists(os.path.join(day_dir, f"{d.isoformat()}.json")))]
+    # Newest first: yesterday, then backwards, so recent L7D/L28D and months complete first.
+    todo = [last - dt.timedelta(days=k) for k in range((last - first).days + 1)]
+    todo = [d for d in todo if a.refetch or not os.path.exists(os.path.join(day_dir, f"{d.isoformat()}.json"))]
     stopped_early = False
 
     if not a.skip_trades:
@@ -409,7 +427,7 @@ def main(argv=None, session=None, today=None):
                 json.dump(perps, f, indent=1, sort_keys=True)
 
     days = [json.load(open(os.path.join(day_dir, n))) for n in sorted(os.listdir(day_dir)) if n.endswith(".json")]
-    out = build_output(days, perps, last)
+    out = build_output(days, perps, last, first)
     with open(a.out, "w") as f:
         json.dump(out, f, separators=(",", ":"))
     missing = sum(1 for k in range((last - first).days + 1)

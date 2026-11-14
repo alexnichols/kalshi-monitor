@@ -81,7 +81,7 @@ cat <<EOF
 
 Done.
   Site:      $URL   (first Pages build takes a minute or two)
-  Backfill:  runs in ~5.5-hour chunks and restarts itself until every day is fetched
+  Backfill:  runs in ~2-hour chunks, newest days first, until every day is fetched
   Watch:     gh run watch -R $REPO
   History:   gh run list -R $REPO --workflow refresh.yml
 EOF

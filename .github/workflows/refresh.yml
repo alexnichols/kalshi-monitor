@@ -21,7 +21,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 350         # GitHub-hosted jobs stop at 6 h; the pipeline saves progress at 5.5 h
+    timeout-minutes: 130         # each run saves progress after ~110 min, then the next one starts
     steps:
       - uses: actions/checkout@v4
 
@@ -40,7 +40,7 @@ jobs:
           fi
           python kalshi_pipeline.py \
             --cache data/cache --out docs/data.json \
-            --max-minutes 330 --rps 12 \
+            --max-minutes 110 --rps 12 \
             ${START:+--start "$START"}
 
       - name: Commit data

@@ -15,8 +15,8 @@ Needs `git` and the GitHub CLI (`gh`), logged in with `gh auth login`.
 
 It creates the repo, pushes this folder, lets workflows write to the repo, turns on Pages
 from `main` `/docs`, and starts the backfill from 2025-01-01 (`BACKFILL_START=...` to change).
-Each run fetches for about 5.5 hours, commits progress and restarts itself until every day is
-done; after that it runs nightly at 00:20 UTC. The page loads `docs/data.json` automatically and
+Each run fetches for about 2 hours, newest days first, commits progress and restarts itself until every day is
+done; after that it runs nightly at 00:20 UTC. L7D and L28D appear within a few hours; older months fill in over the following days. The page loads `docs/data.json` automatically and
 shows its built-in snapshot until the first run writes it.
 
 ## Everyday CLI
