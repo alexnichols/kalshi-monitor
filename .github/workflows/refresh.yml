@@ -21,7 +21,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 130         # each run saves progress after ~110 min, then the next one starts
+    timeout-minutes: 140         # each run stops new work at ~105 min, saves, then starts the next
     steps:
       - uses: actions/checkout@v4
 
@@ -32,6 +32,8 @@ jobs:
       - run: pip install requests==2.32.3
 
       - name: Run pipeline
+        id: pipeline
+        timeout-minutes: 125     # safety net; the commit step below still runs if this trips
         env:
           START: ${{ github.event.inputs.start }}
         run: |
@@ -40,7 +42,7 @@ jobs:
           fi
           python kalshi_pipeline.py \
             --cache data/cache --out docs/data.json \
-            --max-minutes 110 --rps 12 \
+            --max-minutes 105 --rps 12 --workers 6 \
             ${START:+--start "$START"}
 
       - name: Commit data
@@ -54,7 +56,7 @@ jobs:
           git pull --rebase --autostash && git push
 
       - name: Continue backfill if unfinished
-        if: success()
+        if: steps.pipeline.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

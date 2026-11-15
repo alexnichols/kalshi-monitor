@@ -209,6 +209,8 @@ dialog li{ margin:6px 0; }
 .empty code{ background:var(--sunk); padding:1px 6px; border-radius:5px; font-size:13px; }
 .src{ font-size:12.5px; color:var(--ink-3); margin:8px 0 0; }
 .seg button[disabled]{ opacity:.4; cursor:not-allowed; }
+.tier-select{ border:1px solid var(--rule-2); border-radius:8px; background:var(--surface); padding:6px 10px; font-size:13.5px; min-width:190px; }
+.kpi .r{ font-size:12.5px; color:var(--ink-3); margin-top:2px; }
 </style>
 </head>
 <body>
@@ -306,36 +308,34 @@ dialog li{ margin:6px 0; }
 
   <section class="view" id="perps-share" role="tabpanel" aria-labelledby="tab-perps-share" hidden>
     <h2>Perps: Kalshi vs Hyperliquid</h2>
-    <p class="lede">Perpetual futures notional volume on both venues, counted the same way from each exchange’s own daily records.</p>
-    <div class="callout"><strong>Read with care.</strong> Kalshi ended its volume incentive program on Oct 13, 2026, after reporting on repeated fixed-size ETH perp trades. This snapshot starts Oct 15, so it reflects post-incentive activity only.</div>
+    <p class="lede">Kalshi’s perps notional from every fill on its public perps trade tape, fees from Kalshi’s published perps fee tiers, and Hyperliquid’s notional as exact bounds from its candles.</p>
+    <div id="perpsError"></div>
     <div class="toolbar">
       <div class="ctl"><span class="ctl-label">Period</span>
-        <div class="seg" data-bind="perps.gran"><button data-v="weekly">Weekly</button><button data-v="daily">Daily</button></div></div>
-      <div class="ctl"><span class="ctl-label">Kalshi perps fee rate (your assumption)</span>
-        <div class="num"><input type="number" step="0.5" min="0" data-perps-bps value="5" aria-label="Kalshi perps fee rate in basis points"><span>bps</span></div></div>
+        <div class="seg" data-bind="perps.gran"><button data-v="l7">L7D</button><button data-v="l28">L28D</button><button data-v="daily">Daily</button><button data-v="weekly">Weekly</button></div></div>
+      <div class="ctl"><span class="ctl-label">Taker fee tier</span>
+        <select class="tier-select" data-tier="takerTier" aria-label="Taker fee tier"></select></div>
+      <div class="ctl"><span class="ctl-label">Maker fee tier</span>
+        <select class="tier-select" data-tier="makerTier" aria-label="Maker fee tier"></select></div>
     </div>
     <div class="kpis" id="perpsKpis"></div>
-    <div class="two-col">
-      <div class="panel">
-        <div class="legend-inline"><span><i style="background:var(--poly)"></i>Hyperliquid share</span><span><i style="background:var(--kalshi)"></i>Kalshi share</span></div>
-        <div class="chart-box"><canvas id="perpsChart" aria-label="Kalshi versus Hyperliquid perps share"></canvas></div>
-      </div>
-      <div class="panel">
-        <div class="section-title"><h3>What trades, last 24 hours</h3><p>Nov 13, 2026</p></div>
-        <div class="chart-box short"><canvas id="perpsMixChart" aria-label="Perps volume mix by asset class"></canvas></div>
-        <p class="note">Hyperliquid’s figure includes builder-deployed stock and index markets.</p>
-      </div>
+    <div class="panel">
+      <div class="legend-inline" id="perpsLegend"></div>
+      <div class="chart-box"><canvas id="perpsChart" aria-label="Kalshi share of perps notional versus Hyperliquid"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="section-title"><h3 id="perpsMixTitle">Kalshi perps notional by asset class</h3><p id="perpsMixNote"></p></div>
+      <div class="chart-box short"><canvas id="perpsMixChart" aria-label="Kalshi perps notional by asset class"></canvas></div>
     </div>
     <p class="note" id="perpsNote"></p>
   </section>
-
 </main>
 
 <dialog id="aboutDlg" aria-labelledby="aboutTitle">
   <h3 id="aboutTitle">About the data</h3>
   <p>A GitHub Actions job runs <strong>kalshi_pipeline.py</strong> every night and commits <strong>data.json</strong> next to this page, which loads it automatically. Until that file exists, or where it can’t be reached, the page falls back to the built-in snapshot. <em>Load data file</em> still works for a one-off file.</p>
   <ul>
-    <li><strong>Pipeline file (primary):</strong> every Kalshi fill from the public trades endpoints, categorized by Kalshi’s series metadata, and priced with Kalshi’s fee schedule using each series’ and event’s fee terms in force on the trade date. Perps from the Kalshi and Hyperliquid APIs.</li>
+    <li><strong>Pipeline file (primary):</strong> every Kalshi fill from the public trades endpoints, categorized by Kalshi’s series metadata, and priced with Kalshi’s fee schedule using each series’ and event’s fee terms in force on the trade date. Kalshi perps from every fill on the public perps trade tape, priced with Kalshi’s published perps fee tiers; Hyperliquid daily notional as exact bounds from its public candles.</li>
     <li><strong>Built-in snapshot (until the pipeline runs):</strong> Kalshi category volume from <a href="https://ticker-tracker.com/kalshi/volume" target="_blank" rel="noopener">TickerTracker</a>, which compiles Kalshi’s published daily market data; venue and perps volumes from <a href="https://defirate.com/prediction-markets/volume/" target="_blank" rel="noopener">DeFi Rate</a>. The snapshot has no fees: fees appear only once trade-level data is loaded.</li>
     <li><strong>Polymarket</strong> volumes still come from DeFi Rate’s venue data; the pipeline does not pull Polymarket yet.</li>
     <li><strong>Partial periods:</strong> category volumes for November 2026 cover Nov 1 to 12; venue and perps figures run through Nov 13.</li>
@@ -392,6 +392,10 @@ const SNAPSHOT = {
   }
 };
 
+/* Kalshi fee schedule, Perpetual Futures Fees, Tables 1-2 (effective Jul 7, 2026). bps of notional. */
+const PERPS_FEE_SCHEDULES = [{ effective:"2026-07-07", source:"Kalshi fee schedule, Perpetual Futures Fees (effective Jul 7, 2026)",
+  volume_threshold_usd:[0,1e5,3e5,1e6,3e6,1e7,3e7,1e8,3e8,1e9,3e9],
+  taker_bps:[12.0,10.0,8.0,6.0,5.0,4.0,3.5,3.2,3.0,2.8,2.6], maker_bps:[5.0,4.0,3.2,2.4,2.0,1.6,1.4,1.2,1.0,0.8,0.6] }];
 /* ===== @@DATA-END ===== */
 
 /* ===== @@CALC-START ===== */
@@ -416,27 +420,48 @@ const Calc = {
   },
   setData(d){ this.data = this.prepare(d); },
   hasFees(){ const d = this.data; return !!((d.monthlyFees && d.monthlyFees.total.some(v => v != null)) || (d.daily && d.daily.fees)); },
-  perpsDays(){
-    const p = this.data.perps, out = [];
-    if(!p || !p.kalshi) return out;
-    const start = Date.parse(p.start + "T00:00:00Z");
-    for(let i=0;i<p.kalshi.length;i++){
-      if(p.kalshi[i] == null || p.hyperliquid[i] == null) continue;
-      out.push({ date: new Date(start + i*86400000).toISOString().slice(0,10), k: p.kalshi[i]*1e9, h: p.hyperliquid[i]*1e9 });
+  /* Perps in one shape: from the pipeline (every Kalshi fill; Hyperliquid bounds) or the snapshot. */
+  perpsN(){
+    const p = this.data.perps; if(!p) return null;
+    if(p._n) return p._n;
+    let n;
+    if(Array.isArray(p.days)){
+      n = { days:p.days, k:p.kalshi.total, classes:p.kalshi.classes || {}, low:p.hyperliquid.low, high:p.hyperliquid.high, mid:p.hyperliquid.mid,
+            method:p.hyperliquidMethod || [], source:"tape", schedules:p.feeSchedules || PERPS_FEE_SCHEDULES, rule:p.notionalRule || null, mix24h:null };
+    } else {
+      const days = [], k = [], h = [], s0 = Date.parse(p.start + "T00:00:00Z");
+      p.kalshi.forEach((v, i) => { const hv = p.hyperliquid[i]; if(v == null || hv == null) return; days.push(new Date(s0 + i*86400000).toISOString().slice(0,10)); k.push(v*1e9); h.push(hv*1e9); });
+      n = { days, k, classes:{}, low:h, high:h, mid:h, method:days.map(() => "DeFi Rate"), source:"snapshot", schedules:PERPS_FEE_SCHEDULES, rule:null, mix24h:p.mix24h };
     }
-    return out;
+    Object.defineProperty(p, "_n", { value:n, enumerable:false });
+    return n;
   },
-  perpsByMonth(){ const m = {}; this.perpsDays().forEach(d => { const ym = d.date.slice(0,7); m[ym] = (m[ym]||0) + d.k; }); return m; },
-  perpsWeeks(){
-    const weeks = [];
-    this.perpsDays().forEach(d => {
-      const t = Date.parse(d.date + "T00:00:00Z"), dow = (new Date(t).getUTCDay() + 6) % 7;
-      const ws = new Date(t - dow*86400000).toISOString().slice(0,10);
-      let w = weeks.find(x => x.week === ws);
-      if(!w){ w = { week:ws, k:0, h:0, days:0, first:d.date, last:d.date }; weeks.push(w); }
-      w.k += d.k; w.h += d.h; w.days++; w.last = d.date;
+  perpsSchedule(n, iso){ let s = null; (n.schedules || []).forEach(x => { if(x.effective <= iso && (!s || x.effective > s.effective)) s = x; }); return s; },
+  /* Fees over a set of day indexes. Each side uses the chosen tier, or spans tier 10 (lowest) to tier 0 (entry). */
+  perpsFees(n, idxs){
+    const tt = state.perps.takerTier, mt = state.perps.makerTier;
+    let lo = 0, hi = 0, excluded = 0;
+    idxs.forEach(i => {
+      const v = n.k[i] || 0, sch = this.perpsSchedule(n, n.days[i]);
+      if(!sch){ if(v) excluded++; return; }
+      const L = sch.taker_bps.length - 1;
+      const tLo = tt === "range" ? sch.taker_bps[L] : sch.taker_bps[+tt], tHi = tt === "range" ? sch.taker_bps[0] : sch.taker_bps[+tt];
+      const mLo = mt === "range" ? sch.maker_bps[L] : sch.maker_bps[+mt], mHi = mt === "range" ? sch.maker_bps[0] : sch.maker_bps[+mt];
+      lo += v * (tLo + mLo) / 1e4; hi += v * (tHi + mHi) / 1e4;
     });
-    return weeks;
+    return { lo, hi, exact: Math.abs(hi - lo) < 1e-9, excluded };
+  },
+  /* Day indexes of a calendar month, only if every perps day of that month is present. */
+  perpsMonthIdx(n, ym){
+    if(!n || !n.days.length) return null;
+    const lastDay = n.days[n.days.length-1], first = ym + "-01" < "2026-05-29" ? "2026-05-29" : ym + "-01";
+    if(first.slice(0,7) !== ym || first > lastDay) return null;
+    const [y, m] = ym.split("-").map(Number), end = new Date(Date.UTC(y, m, 0)).toISOString().slice(0,10);
+    const stop = end < lastDay ? end : lastDay, idx = [];
+    for(let t = Date.parse(first + "T00:00:00Z"); t <= Date.parse(stop + "T00:00:00Z"); t += 86400000){
+      const i = n.days.indexOf(new Date(t).toISOString().slice(0,10)); if(i < 0) return null; idx.push(i);
+    }
+    return idx;
   },
   /* Venue data only. */
   shareSeries(cfg){
@@ -450,16 +475,20 @@ const Calc = {
     });
     return rows;
   },
-  feesMonth(i, perpsBps, otherRevPct, contraPct){
+  feesMonth(i, otherRevPct, contraPct){
     const d = this.data, ym = d.months[i];
     const taker = d.monthlyTakerFees ? d.monthlyTakerFees.total[i] : null;
     const maker = d.monthlyMakerFees ? d.monthlyMakerFees.total[i] : null;
     const fees = d.monthlyFees.total[i];
-    const perpsVol = this.perpsByMonth()[ym] || 0, perpsFees = perpsVol * perpsBps / 1e4;
-    const tradingFees = fees + perpsFees, otherRev = tradingFees * otherRevPct / 100;
-    const gross = tradingFees + otherRev, contra = gross * contraPct / 100;
-    return { ym, volume: d.monthly.total[i], usd: d.monthlyUsd ? d.monthlyUsd.total[i] : null, taker, maker, fees, perpsVol, perpsFees,
-             tradingFees, otherRev, gross, contra, net: gross - contra,
+    const n = this.perpsN(), pidx = n && n.source === "tape" ? this.perpsMonthIdx(n, ym) : null;
+    const perpsVol = pidx ? pidx.reduce((a, j) => a + (n.k[j] || 0), 0) : null;
+    const pf = pidx ? this.perpsFees(n, pidx) : null;
+    const range = (base, f) => pf && !pf.excluded ? [base + f(pf.lo), base + f(pf.hi)] : [base, base];
+    const tf = range(fees, x => x);
+    const gross = tf.map(x => x * (1 + otherRevPct / 100)), contra = gross.map(x => x * contraPct / 100);
+    return { ym, volume: d.monthly.total[i], usd: d.monthlyUsd ? d.monthlyUsd.total[i] : null, taker, maker, fees,
+             perpsVol, perpsFees: pf ? (pf.excluded ? null : [pf.lo, pf.hi]) : null,
+             tradingFees: tf, otherRev: gross.map((g, k) => g - tf[k]), gross, contra, net: gross.map((g, k) => g - contra[k]),
              bpsFace: d.monthly.total[i] ? fees / d.monthly.total[i] * 1e4 : null,
              pctPaid: (d.monthlyUsd && d.monthlyUsd.total[i]) ? fees / d.monthlyUsd.total[i] : null };
   }
@@ -473,7 +502,7 @@ const store = {
   del(k){ try{ localStorage.removeItem(k); }catch(e){} }
 };
 const DEFAULT_STATE = () => ({ period:"l28", metric:"volume", measure:"contracts", layout:"stacked", range:"all", hidden:[],
-  share:{ vs:"pm", basis:"contracts", haircut:"0" }, perps:{ gran:"weekly", bps:5 }, rev:{ otherRev:0, contra:0 } });
+  share:{ vs:"pm", basis:"contracts", haircut:"0" }, perps:{ gran:"l28", takerTier:"range", makerTier:"range" }, rev:{ otherRev:0, contra:0 } });
 let state = Object.assign(DEFAULT_STATE(), store.get("kvm-state-v3") || {});
 ["share","perps","rev"].forEach(k => state[k] = Object.assign(DEFAULT_STATE()[k], state[k] || {}));
 const saveState = () => store.set("kvm-state-v3", state);
@@ -529,7 +558,9 @@ function mergeData(base, inc){
     const nv = { months }; ["kalshi","polymarket","polymarketUS"].forEach(v => { nv[v] = { contracts: months.map(m => pick(v,"contracts",m)), dollars: months.map(m => pick(v,"dollars",m)) }; });
     base.venues = nv;
   }
-  if(inc.perps && inc.perps.start && Array.isArray(inc.perps.kalshi)){
+  if(inc.perpsError) base.perpsError = inc.perpsError;
+  if(inc.perps && Array.isArray(inc.perps.days)){ base.perps = inc.perps; }
+  else if(inc.perps && inc.perps.start && Array.isArray(inc.perps.kalshi)){
     const map = {};
     const add = p => { if(!p || !p.start || !p.kalshi) return; const s0 = Date.parse(p.start + "T00:00:00Z");
       p.kalshi.forEach((k, i) => { const h = p.hyperliquid ? p.hyperliquid[i] : null; if(k != null && h != null) map[new Date(s0 + i*86400000).toISOString().slice(0,10)] = [k, h]; }); };
@@ -607,28 +638,32 @@ const DAY = 86400000;
 const isoDay = t => new Date(t).toISOString().slice(0,10);
 const dayNum = iso => Math.round(Date.parse(iso + "T00:00:00Z") / DAY);
 function emptyCats(){ const o = {}; [...CATS, "total"].forEach(c => o[c] = []); return o; }
-/* Trailing windows. From the daily trade tape when loaded (one point per day); until then
-   from complete Monday–Sunday weeks, so windows end on Sundays. */
+/* Trailing windows, always ending on the latest day of daily data (the most recent complete
+   UTC day). Never falls back to week or month ends. */
 function rollingSeries(win){
   const d = Calc.data;
-  if(d.days && d.daily && d.days.length >= win){
-    const t = d.days.map(dayNum), ends = [];
-    for(let j = win-1; j < d.days.length; j++) if(t[j] - t[j-win+1] === win-1) ends.push(j);
-    if(ends.length){
-      const roll = b => { if(!b) return null; const o = emptyCats();
-        [...CATS, "total"].forEach(c => { const a = b[c] || [], p = [0]; a.forEach(v => p.push(p[p.length-1] + (v || 0))); o[c] = ends.map(j => p[j+1] - p[j-win+1]); });
-        return o; };
-      return { keys: ends.map(j => d.days[j]), block: roll(d.daily.contracts), usd: roll(d.daily.usd), fee: roll(d.daily.fees), dense: true, basis: "daily" };
-    }
-  }
-  const n = win / 7, W = d.weeks || [], tw = W.map(dayNum), ends = [];
-  for(let k = n-1; k < W.length; k++) if(tw[k] - tw[k-n+1] === 7*(n-1)) ends.push(k);
+  if(!d.days || !d.daily || !d.days.length) return { unavailable:true, have:0 };
+  const t = d.days.map(dayNum), n = t.length;
+  let have = 1; while(have < n && t[n-have] - t[n-have-1] === 1) have++;
+  if(have < win) return { unavailable:true, have };
+  const ends = [];
+  for(let j = win-1; j < n; j++) if(t[j] - t[j-win+1] === win-1) ends.push(j);
   const roll = b => { if(!b) return null; const o = emptyCats();
-    [...CATS, "total"].forEach(c => { o[c] = ends.map(k => { let s = 0; for(let q = k-n+1; q <= k; q++){ const v = b[c] ? b[c][q] : null; if(v == null) return null; s += v; } return s; }); });
+    [...CATS, "total"].forEach(c => { const a = b[c] || [], p = [0]; a.forEach(v => p.push(p[p.length-1] + (v || 0))); o[c] = ends.map(j => p[j+1] - p[j-win+1]); });
     return o; };
-  const fee = roll(d.weeklyFees), usd = roll(d.weeklyUsd);
-  return { keys: ends.map(k => isoDay(Date.parse(W[k] + "T00:00:00Z") + 6*DAY)), block: roll(d.weekly),
-           usd: usd && usd.total.some(v => v != null) ? usd : null, fee: fee && fee.total.some(v => v != null) ? fee : null, dense: false, basis: "weekly" };
+  return { keys: ends.map(j => d.days[j]), block: roll(d.daily.contracts), usd: roll(d.daily.usd), fee: roll(d.daily.fees), dense: true };
+}
+/* Month to date vs the same days of the prior month, from daily data. */
+function priorMonthToDate(ym, visible, metric){
+  const d = Calc.data; if(!d.days || !d.daily) return null;
+  const inMonth = d.days.filter(x => x.startsWith(ym)); if(!inMonth.length) return null;
+  const nDays = +inMonth[inMonth.length-1].slice(8);
+  if(inMonth.length !== nDays) return null;
+  const [y, m] = ym.split("-").map(Number), py = m === 1 ? y - 1 : y, pm = m === 1 ? 12 : m - 1;
+  const pym = `${py}-${String(pm).padStart(2,"0")}`, b = d.daily[metric]; if(!b) return null;
+  let sum = 0;
+  for(let k = 1; k <= nDays; k++){ const i = d.days.indexOf(`${pym}-${String(k).padStart(2,"0")}`); if(i < 0) return null; sum += visible.reduce((a,c) => a + (b[c][i] || 0), 0); }
+  return { sum, label: `${MONTHS[pm-1]} 1–${nDays}` };
 }
 function rollLabel(iso, withYear){ const d = new Date(iso + "T00:00:00Z"); return MONTHS[d.getUTCMonth()] + " " + d.getUTCDate() + (withYear ? " ’" + String(d.getUTCFullYear()).slice(2) : ""); }
 function volumeSeries(){
@@ -636,6 +671,7 @@ function volumeSeries(){
   let s;
   if(p === "l7" || p === "l28"){
     const win = p === "l7" ? 7 : 28, r = rollingSeries(win);
+    if(r.unavailable) return { kind:"rolling", win, unavailable:true, have:r.have, keys:[], idx:[], labels:[] };
     s = Object.assign(r, { kind:"rolling", win, monthly:false });
   } else if(p === "monthly"){
     s = { keys: d.months.slice(), block: d.monthly, usd: d.monthlyUsd, fee: d.monthlyFees, kind:"monthly", monthly:true };
@@ -668,6 +704,14 @@ function renderVolume(){
   document.getElementById("rangeCtl").style.display = s.ranged ? "" : "none";
   document.getElementById("measureCtl").hidden = !(s.usd && metric === "volume");
   const fb = document.getElementById("feesMetricBtn"); fb.disabled = !s.fee; fb.title = s.fee ? "" : "Fees appear once the trade tape is loaded";
+  if(s.unavailable){
+    if(charts.volChart){ charts.volChart.destroy(); delete charts.volChart; }
+    document.getElementById("chips").innerHTML = ""; document.getElementById("volTable").innerHTML = ""; document.getElementById("volNote").innerHTML = "";
+    document.getElementById("volReadout").innerHTML = `<div class="empty" style="width:100%"><h3>L${s.win}D needs ${s.win} consecutive days of trade data</h3>
+      <p>Rolling windows always end on the most recent complete day, so they’re built only from the daily trade tape. ${s.have ? `${s.have} of ${s.win} days are in so far; the backfill fetches the newest days first.` : "This copy has no daily data yet; on the GitHub Pages version it arrives within a few hours of the backfill starting."}</p>
+      <p style="margin-bottom:0"><button class="btn" data-set-period="monthly">Show monthly instead</button></p></div>`;
+    return;
+  }
   if(!s.idx.length){
     if(charts.volChart){ charts.volChart.destroy(); delete charts.volChart; }
     document.getElementById("volReadout").innerHTML = `<div class="sub">No complete ${s.kind === "rolling" ? "L" + s.win + "D window" : "period"} available for this view yet.</div>`;
@@ -693,12 +737,14 @@ function renderVolume(){
 
   const partial = s.kind === "monthly" && Calc.data.partialMonths[s.keys[last]];
   const word = metric === "fees" ? "fees priced from the tape" : (state.measure === "usd" && s.usd ? "dollars paid" : "volume");
-  const tLast = sumAt(last), tPrior = prior == null ? null : sumAt(prior), top = visible[0];
+  const tLast = sumAt(last), top = visible[0];
+  const mtd = partial ? priorMonthToDate(s.keys[last], visible, metric === "fees" ? "fees" : (state.measure === "usd" && s.usd ? "usd" : "contracts")) : null;
+  const tPrior = mtd ? mtd.sum : (prior == null ? null : sumAt(prior));
   const head = s.kind === "rolling" ? `L${s.win}D to ${rollLabel(s.keys[last], true)}` : s.monthly ? monthLabel(s.keys[last], true) + (partial ? " (" + partial + ")" : "") : "Week of " + dayLabel(s.keys[last]);
-  const vsWord = s.kind === "rolling" ? `prior ${s.win} days` : s.monthly ? "prior month" : "prior week";
+  const vsWord = s.kind === "rolling" ? `prior ${s.win} days` : mtd ? mtd.label : s.monthly ? "prior month" : "prior week";
   document.getElementById("volReadout").innerHTML = visible.length ? `
     <div><div class="sub">${head}, ${word}${hidden.size ? " (filtered)" : ""}</div><div class="big">${fmtUsd(tLast)}</div></div>
-    <div><div class="sub">vs ${vsWord}</div><div class="big">${partial ? '<span class="sub" style="font-size:15px">partial month</span>' : (tPrior ? fmtChange(tLast, tPrior) : "–")}</div></div>
+    ${partial && !mtd ? "" : `<div><div class="sub">vs ${vsWord}</div><div class="big">${tPrior ? fmtChange(tLast, tPrior) : "–"}</div></div>`}
     ${s.kind === "rolling" && metric === "fees" ? `<div><div class="sub">Annualized</div><div class="big">${fmtUsd(tLast * 365 / s.win)}</div></div>` : ""}
     <div><div class="sub">Largest category</div><div class="big">${catLabel(top)} <span class="sub" style="font-size:15px">${fmtPct(catValue(s,top,last)/tLast)}</span></div></div>` :
     `<div class="sub">All categories are hidden. Pick one above or choose a preset.</div>`;
@@ -723,7 +769,6 @@ function renderVolume(){
   document.getElementById("volSrc").textContent = "Source: " + sourceLabel();
   const notes = [];
   if(s.kind === "rolling") notes.push(`Each point sums the ${s.win} days ending on that date, so every window covers the same number of days and weekdays; the change compares with the ${s.win} days before.`);
-  if(s.kind === "rolling" && s.basis === "weekly") notes.push("Until the daily trade tape is loaded, windows are built from complete Monday–Sunday weeks, so points fall on Sundays.");
   if(s.kind === "monthly" && partial) notes.push(`* Latest month is partial (${partial}).`);
   if(s.kind === "weekly") notes.push("Weeks run Monday to Sunday.");
   notes.push("Combos are Kalshi’s multi-leg parlays; their contracts usually trade for a few cents, so they dominate face-value volume but not dollars paid or fees. “Other” is everything outside the named categories.");
@@ -752,20 +797,19 @@ function renderFees(){
       <p>On the GitHub Pages version of this dashboard, a GitHub Actions job prices Kalshi’s trade tape and publishes it here. The backfill works newest-first and publishes about every two hours, so L7D and L28D fees appear first and older months fill in over the following days. Nothing is estimated in the meantime.</p>${progress}</div>`;
     return;
   }
-  const t = chartTheme(), rows = feeIdx.map(i => Calc.feesMonth(i, +state.perps.bps, +state.rev.otherRev, +state.rev.contra));
+  const t = chartTheme(), rows = feeIdx.map(i => Calc.feesMonth(i, +state.rev.otherRev, +state.rev.contra));
   const kpi = (k, v) => `<div><div class="sub">${k}</div><div class="big">${v}</div></div>`;
   let readout = "";
   if(r7) readout += kpi(`L7D fees to ${rollLabel(r7.end, true)}`, fmtUsd(r7.fees)) + kpi("vs prior 7 days", r7.prior ? fmtChange(r7.fees, r7.prior) : "–");
   if(r28) readout += kpi("L28D fees", fmtUsd(r28.fees)) + kpi("L28D annualized", fmtUsd(r28.fees * 365 / 28)) + kpi("L28D bps of face", (r28.fees / r28.vol * 1e4).toFixed(1));
-  if(!readout && rows.length){ const full = rows.filter(r => !d.partialMonths[r.ym]).pop() || rows[rows.length-1];
-    readout = kpi(`${monthLabel(full.ym, true)} event-contract fees`, fmtUsd(full.fees)) + kpi("Bps of face volume", full.bpsFace == null ? "–" : full.bpsFace.toFixed(1)); }
+  if(!readout && rows.length){ const cur = rows[rows.length-1], pm = d.partialMonths[cur.ym];
+    readout = kpi(`${monthLabel(cur.ym, true)}${pm ? " to date (" + pm + ")" : ""} event-contract fees`, fmtUsd(cur.fees)) + kpi("Bps of face volume", cur.bpsFace == null ? "–" : cur.bpsFace.toFixed(1)); }
   el.innerHTML = `
     <div class="panel"><div class="readout">${readout}</div>
       ${rows.length ? `<div class="chart-box"><canvas id="feesChart" aria-label="Fees by category per month"></canvas></div>` : `<p class="note">Monthly totals appear once a whole month of trades has been fetched. Use L7D or L28D on the Volume tab, with <em>Fees</em>, for the latest windows.</p>`}
       <p class="src">Method: ${d.feeMethod || "per-fill pricing with Kalshi’s fee schedule"}. Source: ${sourceLabel()}.</p>${progress}</div>
-    ${rows.length ? `<div class="panel"><div class="section-title"><h3>Revenue build</h3><p>Lines below trading fees are your inputs; nothing is fitted</p></div>
+    ${rows.length ? `<div class="panel"><div class="section-title"><h3>Revenue build</h3><p>Perps fees use the tiers chosen on the Perps tab (a range by default); other lines are your inputs</p></div>
       <div class="assume">
-        <div class="field"><label>Perps fee rate</label><div class="num"><input type="number" step="0.5" min="0" data-perps-bps value="${state.perps.bps}"><span>bps</span></div><div class="hint">Your assumption until perps fills are priced</div></div>
         <div class="field"><label>Other revenue</label><div class="num"><input type="number" step="0.5" data-rev="otherRev" value="${state.rev.otherRev}"><span>%</span></div><div class="hint">Interest, processing, MM P&amp;L, as % of trading fees</div></div>
         <div class="field"><label>Contra revenue</label><div class="num"><input type="number" step="0.5" min="0" data-rev="contra" value="${state.rev.contra}"><span>%</span></div><div class="hint">MM and broker payouts, rebates, promos, as % of gross</div></div>
       </div>
@@ -778,10 +822,12 @@ function renderFees(){
     options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false },
       scales: Object.assign(baseScales(t, v => fmtUsd(v), { stacked:true }), { y1:{ position:"right", beginAtZero:true, grid:{ display:false }, border:{ display:false }, ticks:{ color:t.ink2, callback:v => v + " bps", maxTicksLimit:6 } } }),
       plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { callbacks:{ label:c => ` ${c.dataset.label}: ${c.dataset.yAxisID === "y1" ? (c.parsed.y == null ? "–" : c.parsed.y.toFixed(1) + " bps") : fmtUsd(c.parsed.y)}` } }) } } });
-  const lines = [["Volume ($1 face)","volume"],["Dollars paid","usd"],["Taker fees","taker"],["Maker fees","maker"],["Event-contract fees","fees","strong"],["Bps of face volume","bpsFace","bps"],["Perps volume","perpsVol"],["Perps fees (assumed rate)","perpsFees"],["Trading fees","tradingFees","total"],["Other revenue","otherRev"],["Gross revenue","gross","total"],["Contra revenue","contra","neg"],["Net revenue","net","total"]];
+  const lines = [["Volume ($1 face)","volume"],["Dollars paid","usd"],["Taker fees","taker"],["Maker fees","maker"],["Event-contract fees","fees","strong"],["Bps of face volume","bpsFace","bps"],["Perps notional","perpsVol"],["Perps fees (published tiers)","perpsFees"],["Trading fees","tradingFees","total"],["Other revenue","otherRev"],["Gross revenue","gross","total"],["Contra revenue","contra","neg"],["Net revenue","net","total"]];
   document.getElementById("feesTable").innerHTML = `<thead><tr><th>Line</th>${rows.map(r => `<th>${monthLabel(r.ym)}</th>`).join("")}</tr></thead><tbody>` +
     lines.map(([label, k, cls]) => `<tr class="${cls === "total" ? "total" : cls === "strong" ? "strong" : ""}"><td>${label}</td>${rows.map(r => { const v = r[k];
-      if(v == null) return "<td>–</td>"; if(cls === "bps") return `<td>${v.toFixed(1)}</td>`; if(cls === "neg") return `<td>${v ? "(" + fmtUsd(v) + ")" : "–"}</td>`; return `<td>${fmtUsd(v)}</td>`; }).join("")}</tr>`).join("") + "</tbody>";
+      if(v == null) return "<td>–</td>";
+      if(Array.isArray(v)){ const same = Math.abs(v[1] - v[0]) < 0.5, f = x => cls === "neg" ? "(" + fmtUsd(x) + ")" : fmtUsd(x); return `<td>${same ? f(v[0]) : f(v[0]) + "–" + f(v[1])}</td>`; }
+      if(cls === "bps") return `<td>${v.toFixed(1)}</td>`; if(cls === "neg") return `<td>${v ? "(" + fmtUsd(v) + ")" : "–"}</td>`; return `<td>${fmtUsd(v)}</td>`; }).join("")}</tr>`).join("") + "</tbody>";
   const sc = document.getElementById("feesScroll"); requestAnimationFrame(() => { sc.scrollLeft = sc.scrollWidth; });
 }
 /* ---------- Share vs Polymarket ---------- */
@@ -800,34 +846,106 @@ function renderShare(){
 }
 
 /* ---------- Perps ---------- */
-function renderPerps(){
-  const t = chartTheme(), days = Calc.perpsDays();
-  let labels, K, H;
-  if(state.perps.gran === "daily"){ labels = days.map(d => dayLabel(d.date)); K = days.map(d => d.k); H = days.map(d => d.h); }
-  else { const w = Calc.perpsWeeks(); labels = w.map(x => x.days < 7 ? `${dayLabel(x.first)}–${new Date(x.last + "T00:00:00Z").getUTCDate()}*` : `Wk of ${dayLabel(x.week)}`); K = w.map(x => x.k); H = w.map(x => x.h); }
-  const kp = K.map((v,i) => v/(v+H[i])*100);
-  mkChart("perpsChart", { type:"bar", data:{ labels, datasets:[
-      { label:"Kalshi", data:kp, raw:K, backgroundColor:t.kalshi, borderWidth:0, maxBarThickness:60 },
-      { label:"Hyperliquid", data:kp.map(v => 100 - v), raw:H, backgroundColor:t.poly, borderWidth:0, maxBarThickness:60 } ] },
-    options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, scales: baseScales(t, v => v + "%", { stacked:true, max:100 }),
-      plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { itemSort:(a,b) => b.datasetIndex - a.datasetIndex, callbacks:{ label:c => ` ${c.dataset.label}: ${c.parsed.y.toFixed(1)}% (${fmtUsd(c.dataset.raw[c.dataIndex])})` } }) } }
-  }, { seg:{ format:v => (v < 10 ? v.toFixed(1) : Math.round(v)) + "%", color:() => "#FFFFFF" } });
-  const recent = days.slice(-30), k30 = recent.reduce((a,d) => a + d.k, 0), h30 = recent.reduce((a,d) => a + d.h, 0), fees = k30 * state.perps.bps / 1e4;
-  document.getElementById("perpsKpis").innerHTML = `
-    <div class="kpi"><div class="k">Kalshi perps, ${recent.length} days</div><div class="v">${fmtUsd(k30)}</div></div>
-    <div class="kpi"><div class="k">Hyperliquid perps, ${recent.length} days</div><div class="v">${fmtUsd(h30)}</div></div>
-    <div class="kpi"><div class="k">Kalshi share</div><div class="v">${fmtPct(k30/(k30+h30),1)}</div></div>
-    <div class="kpi"><div class="k">Kalshi fees at ${(+state.perps.bps).toFixed(1)} bps (assumed)</div><div class="v">${fmtUsd(fees)}</div></div>`;
-  const mix = Calc.data.perps.mix24h, mc = ["#E3A33B","#4F7FD9","#2A9D8F","#B4652A","#C8566F"];
-  mkChart("perpsMixChart", { type:"bar", data:{ labels:["Kalshi","Hyperliquid"], datasets: mix.classes.map((c,i) => ({ label:c, data:[mix.kalshi[i], mix.hyperliquid[i]], backgroundColor:mc[i], borderWidth:0, maxBarThickness:34 })) },
-    options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
-      scales:{ x:{ stacked:true, max:100, grid:{ color:t.rule }, border:{ display:false }, ticks:{ color:t.ink3, callback:v => v + "%", maxTicksLimit:5 } }, y:{ stacked:true, grid:{ display:false }, ticks:{ color:t.ink2, font:{ family:"Archivo", weight:"600" } } } },
-      plugins:{ legend:{ position:"bottom", labels:{ color:t.ink2, boxWidth:10, boxHeight:10, font:{ family:"Archivo", size:12 } } }, tooltip:Object.assign(tooltipBase(t), { callbacks:{ label:c => ` ${c.dataset.label}: ${c.parsed.x.toFixed(1)}%` } }) } }
-  }, { seg:{ format:v => v >= 8 ? Math.round(v) + "%" : "", color:() => "#FFFFFF" } });
-  document.getElementById("perpsNote").textContent = (state.perps.gran === "weekly" ? "Weeks run Monday to Sunday; * marks partial weeks. " : "") +
-    "Notional, one side of each trade, whole UTC days, from DeFi Rate’s reads of each exchange’s own data. The perps fee rate is your assumption; Kalshi’s perps fee table isn’t applied yet.";
+const CLASS_COLORS = ["#E3A33B","#4F7FD9","#2A9D8F","#B4652A","#C8566F","#8F74D6","#69B9DA","#9AA59D"];
+function perpsPeriods(n){
+  const g = state.perps.gran, t = n.days.map(dayNum), N = t.length;
+  if(g === "l7" || g === "l28"){
+    const win = g === "l7" ? 7 : 28;
+    let have = N ? 1 : 0; while(have < N && t[N-have] - t[N-have-1] === 1) have++;
+    if(have < win) return { unavailable:true, win, have };
+    const out = []; for(let j = win-1; j < N; j++) if(t[j] - t[j-win+1] === win-1){ const idx = []; for(let q = j-win+1; q <= j; q++) idx.push(q); out.push({ key:n.days[j], label:rollLabel(n.days[j]), idx }); }
+    return { rolling:true, win, periods:out };
+  }
+  if(g === "daily") return { periods: n.days.map((d, i) => ({ key:d, label:dayLabel(d), idx:[i] })) };
+  const weeks = {};
+  n.days.forEach((d, i) => { const tt = Date.parse(d + "T00:00:00Z"), dow = (new Date(tt).getUTCDay() + 6) % 7, w = isoDay(tt - dow*DAY); (weeks[w] = weeks[w] || []).push(i); });
+  return { periods: Object.keys(weeks).sort().map(w => ({ key:w, label:(weeks[w].length < 7 ? dayLabel(n.days[weeks[w][0]]) + "–" + new Date(n.days[weeks[w][weeks[w].length-1]] + "T00:00:00Z").getUTCDate() + "*" : "Wk of " + dayLabel(w)), idx:weeks[w], partial: weeks[w].length < 7 })) };
 }
-
+function perpsAgg(n, idx){
+  let k = 0, lo = 0, hi = 0, mid = 0, miss = 0;
+  idx.forEach(i => { k += n.k[i] || 0; if(n.low[i] == null){ miss++; return; } lo += n.low[i]; hi += n.high[i]; mid += n.mid[i]; });
+  return { k, lo, hi, mid, miss, shareMid: k / (k + mid), shareHi: k / (k + lo), shareLo: k / (k + hi) };
+}
+function tierOptions(sel, sch, key){
+  const rates = key === "takerTier" ? sch.taker_bps : sch.maker_bps;
+  sel.innerHTML = `<option value="range">All tiers: ${rates[rates.length-1]}–${rates[0]} bps</option>` +
+    rates.map((r, i) => `<option value="${i}">Tier ${i}: ${r} bps (≥ $${(sch.volume_threshold_usd[i]/1e6 >= 1 ? sch.volume_threshold_usd[i]/1e6 + "M" : sch.volume_threshold_usd[i]/1e3 + "K").replace("$0K","$0")} 30-day volume)</option>`).join("");
+  sel.value = state.perps[key];
+}
+function renderPerps(){
+  const t = chartTheme(), n = Calc.perpsN(), err = Calc.data.perpsError;
+  document.getElementById("perpsError").innerHTML = err ? `<div class="callout"><strong>Perps were not updated in the latest run.</strong> ${err.replace(/</g,"&lt;")}</div>` : "";
+  const sch = n && n.schedules && n.schedules[n.schedules.length-1] || PERPS_FEE_SCHEDULES[0];
+  document.querySelectorAll(".tier-select").forEach(sel => tierOptions(sel, sch, sel.dataset.tier));
+  if(!n || !n.days.length){ document.getElementById("perpsKpis").innerHTML = '<div class="sub">No perps data loaded.</div>'; return; }
+  const P = perpsPeriods(n);
+  if(P.unavailable){
+    ["perpsChart","perpsMixChart"].forEach(id => { if(charts[id]){ charts[id].destroy(); delete charts[id]; } });
+    document.getElementById("perpsKpis").innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>L${P.win}D needs ${P.win} consecutive days of perps data</h3><p>${P.have} of ${P.win} days are in so far. Rolling windows always end on the most recent complete day.</p><p style="margin-bottom:0"><button class="btn" data-set-perps="daily">Show daily instead</button></p></div>`;
+    document.getElementById("perpsLegend").innerHTML = ""; document.getElementById("perpsNote").textContent = ""; return;
+  }
+  const rows = P.periods.map(p => Object.assign({ p }, perpsAgg(n, p.idx)));
+  const last = rows[rows.length-1], prev = P.rolling ? rows.find(r => r.p.key === isoDay(Date.parse(last.p.key + "T00:00:00Z") - P.win*DAY)) : rows[rows.length-2];
+  const fees = Calc.perpsFees(n, last.p.idx);
+  const rangeTxt = (a, b, f) => Math.abs(b - a) / Math.max(Math.abs(a), 1) < 1e-6 ? f(a) : `${f(a)}–${f(b)}`;
+  const head = P.rolling ? `L${P.win}D to ${rollLabel(last.p.key, true)}` : (state.perps.gran === "daily" ? rollLabel(last.p.key, true) : last.p.label);
+  const ann = P.rolling ? 365 / P.win : null;
+  document.getElementById("perpsKpis").innerHTML = `
+    <div class="kpi"><div class="k">Kalshi perps, ${head}</div><div class="v">${fmtUsd(last.k)}</div><div class="r">${prev ? "vs prior " + (P.rolling ? P.win + " days" : "period") + " " + fmtChange(last.k, prev.k) : ""}</div></div>
+    <div class="kpi"><div class="k">Hyperliquid perps</div><div class="v">${fmtUsd(last.mid)}</div><div class="r">${last.miss ? last.miss + " day(s) without data" : "bounds " + rangeTxt(last.lo, last.hi, fmtUsd)}</div></div>
+    <div class="kpi"><div class="k">Kalshi share</div><div class="v">${fmtPct(last.shareMid, 1)}</div><div class="r">${rangeTxt(last.shareLo*100, last.shareHi*100, v => v.toFixed(2) + "%")}</div></div>
+    <div class="kpi"><div class="k">Kalshi perps fees${fees.exact ? "" : " (tier range)"}</div><div class="v">${rangeTxt(fees.lo, fees.hi, fmtUsd)}</div><div class="r">${ann ? "annualized " + rangeTxt(fees.lo*ann, fees.hi*ann, fmtUsd) : ""}${fees.excluded ? " · excludes " + fees.excluded + " day(s) before the Jul 7, 2026 schedule" : ""}</div></div>`;
+  const labels = rows.map(r => r.p.label);
+  if(P.rolling){
+    document.getElementById("perpsLegend").innerHTML = `<span><i style="background:${t.kalshi}"></i>Kalshi share of Kalshi + Hyperliquid notional</span><span><i style="background:${hexA(t.kalshi.startsWith("#") ? t.kalshi : "#3F7A2C", .25)}"></i>Exact bounds from Hyperliquid’s candle range</span>`;
+    mkChart("perpsChart", { type:"line", data:{ labels, datasets:[
+        { label:"Upper bound", data: rows.map(r => r.shareHi*100), borderWidth:0, pointRadius:0, fill:false },
+        { label:"Lower bound", data: rows.map(r => r.shareLo*100), borderWidth:0, pointRadius:0, fill:"-1", backgroundColor: hexA(t.kalshi.startsWith("#") ? t.kalshi : "#3F7A2C", .22) },
+        { label:"Kalshi share", data: rows.map(r => r.shareMid*100), borderColor:t.kalshi, backgroundColor:t.kalshi, borderWidth:2, pointRadius:0, tension:0, fill:false } ] },
+      options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, scales: baseScales(t, v => v + "%"),
+        plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { callbacks:{ title: it => `L${P.win}D ending ${rollLabel(rows[it[0].dataIndex].p.key, true)}`, label: c => ` ${c.dataset.label}: ${c.parsed.y.toFixed(2)}%` } }) } } });
+  } else {
+    document.getElementById("perpsLegend").innerHTML = `<span><i style="background:var(--poly)"></i>Hyperliquid share</span><span><i style="background:var(--kalshi)"></i>Kalshi share</span>`;
+    mkChart("perpsChart", { type:"bar", data:{ labels, datasets:[
+        { label:"Kalshi", data: rows.map(r => r.shareMid*100), backgroundColor:t.kalshi, borderWidth:0, maxBarThickness:60 },
+        { label:"Hyperliquid", data: rows.map(r => 100 - r.shareMid*100), backgroundColor:t.poly, borderWidth:0, maxBarThickness:60 } ] },
+      options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, scales: baseScales(t, v => v + "%", { stacked:true, max:100 }),
+        plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { itemSort:(a,b) => b.datasetIndex - a.datasetIndex,
+          callbacks:{ label: c => { const r = rows[c.dataIndex]; return c.datasetIndex === 0 ? ` Kalshi: ${fmtUsd(r.k)}, share ${rangeTxt(r.shareLo*100, r.shareHi*100, v => v.toFixed(2) + "%")}` : ` Hyperliquid: ${rangeTxt(r.lo, r.hi, fmtUsd)}`; } } }) } }
+    }, { seg:{ format:v => (v < 10 ? v.toFixed(1) : Math.round(v)) + "%", color:() => "#FFFFFF" } });
+  }
+  const classes = Object.keys(n.classes || {});
+  if(classes.length){
+    const tot = c => rows.map(r => r.p.idx.reduce((a, i) => a + (n.classes[c][i] || 0), 0));
+    const order = classes.slice().sort((a, b) => tot(b)[rows.length-1] - tot(a)[rows.length-1]);
+    document.getElementById("perpsMixTitle").textContent = "Kalshi perps notional by asset class";
+    document.getElementById("perpsMixNote").textContent = "Asset classes as Kalshi labels each market";
+    mkChart("perpsMixChart", { type: P.rolling ? "line" : "bar", data:{ labels, datasets: order.map((c, k) => P.rolling
+        ? { type:"line", label:c, data:tot(c), backgroundColor:hexA(CLASS_COLORS[k % 8], .85), borderColor:CLASS_COLORS[k % 8], borderWidth:1, pointRadius:0, fill: k === 0 ? "origin" : "-1" }
+        : { type:"bar", label:c, data:tot(c), backgroundColor:CLASS_COLORS[k % 8], borderWidth:0, maxBarThickness:60 }) },
+      options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, scales: baseScales(t, v => fmtUsd(v), { stacked:true }),
+        plugins:{ legend:{ position:"bottom", labels:{ color:t.ink2, boxWidth:10, boxHeight:10 } }, tooltip:Object.assign(tooltipBase(t), { itemSort:(a,b) => b.datasetIndex - a.datasetIndex, callbacks:{ label: c => ` ${c.dataset.label}: ${fmtUsd(c.parsed.y)}` } }) } } });
+  } else if(n.mix24h){
+    const mix = n.mix24h;
+    document.getElementById("perpsMixTitle").textContent = "What trades, last 24 hours";
+    document.getElementById("perpsMixNote").textContent = "Snapshot from DeFi Rate, Nov 13, 2026";
+    mkChart("perpsMixChart", { type:"bar", data:{ labels:["Kalshi","Hyperliquid"], datasets: mix.classes.map((c,i) => ({ label:c, data:[mix.kalshi[i], mix.hyperliquid[i]], backgroundColor:CLASS_COLORS[i], borderWidth:0, maxBarThickness:34 })) },
+      options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+        scales:{ x:{ stacked:true, max:100, grid:{ color:t.rule }, border:{ display:false }, ticks:{ color:t.ink3, callback:v => v + "%", maxTicksLimit:5 } }, y:{ stacked:true, grid:{ display:false }, ticks:{ color:t.ink2 } } },
+        plugins:{ legend:{ position:"bottom", labels:{ color:t.ink2, boxWidth:10, boxHeight:10 } }, tooltip:Object.assign(tooltipBase(t), { callbacks:{ label:c => ` ${c.dataset.label}: ${c.parsed.x.toFixed(1)}%` } }) } } });
+  }
+  const methods = [...new Set(last.p.idx.map(i => n.method[i]).filter(Boolean))];
+  const notes = [];
+  if(n.source === "tape"){
+    notes.push(`Kalshi: every fill from the public perps trade tape, notional = ${n.rule ? n.rule.rule.replace(/_x_/g, " × ").replace(/_/g, " ") : "contracts × price"}${n.rule ? `, verified against Kalshi’s own reported 24-hour notional (weighted difference ${(n.rule.weighted_error*100).toFixed(3)}% across ${n.rule.markets_checked} markets)` : ""}.`);
+    notes.push(`Hyperliquid: its public API has candles with size but not dollars, so each day is bounded exactly by size × the candle’s low and high (${methods.join(" and ") || "1m/1h"} candles); the share uses the midpoint of each candle’s open, high, low and close.`);
+  } else {
+    notes.push("Snapshot from DeFi Rate until the pipeline’s perps data loads. Hyperliquid has no bounds here.");
+  }
+  notes.push(`Fees: notional × Kalshi’s published perps tiers (${sch.source}). Each fill’s tier depends on the account’s 30-day trailing volume, which isn’t public, so fees show the full tier range unless you pick tiers above. Funding payments aren’t fees and aren’t included.`);
+  if(!P.rolling && state.perps.gran === "weekly") notes.push("Weeks run Monday to Sunday; * marks partial weeks.");
+  document.getElementById("perpsNote").textContent = notes.join(" ");
+}
 /* ---------- Wiring ---------- */
 const RENDER = { "volume":renderVolume, "fees":renderFees, "event-share":renderShare, "perps-share":renderPerps };
 const VIEWS = Object.keys(RENDER);
@@ -862,6 +980,10 @@ window.addEventListener("hashchange", () => show(location.hash.slice(1)));
 document.addEventListener("click", e => {
   const segBtn = e.target.closest(".seg[data-bind] button");
   if(segBtn){ if(segBtn.disabled) return; setPath(state, segBtn.parentElement.dataset.bind, segBtn.dataset.v); saveState(); renderCurrent(); return; }
+  const spp = e.target.closest("[data-set-perps]");
+  if(spp){ state.perps.gran = spp.dataset.setPerps; saveState(); renderCurrent(); return; }
+  const sp = e.target.closest("[data-set-period]");
+  if(sp){ state.period = sp.dataset.setPeriod; saveState(); renderCurrent(); return; }
   const c = e.target.closest(".chip[data-cat]");
   if(c){ const h = new Set(state.hidden); h.has(c.dataset.cat) ? h.delete(c.dataset.cat) : h.add(c.dataset.cat); state.hidden = [...h]; saveState(); renderCurrent(); return; }
   const pre = e.target.closest("[data-preset]");
@@ -871,13 +993,12 @@ document.addEventListener("click", e => {
   if(e.target.id === "aboutClose"){ const d = document.getElementById("aboutDlg"); d.close ? d.close() : d.removeAttribute("open"); return; }
   if(e.target.id === "resetData"){ store.del("kvm-data-v2"); Calc.setData(cloneSnapshot()); updateStatus(); renderCurrent(); return; }
 });
+document.addEventListener("change", e => { if(e.target.dataset && e.target.dataset.tier){ state.perps[e.target.dataset.tier] = e.target.value; saveState(); renderCurrent(); } });
 document.addEventListener("input", e => {
   const el = e.target;
-  if(el.hasAttribute("data-perps-bps")){ const v = parseFloat(el.value); if(!isNaN(v) && v >= 0){ state.perps.bps = v; saveState();
-    document.querySelectorAll("[data-perps-bps]").forEach(x => { if(x !== el) x.value = v; }); if(current === "perps-share") renderPerps(); else if(current === "fees") refreshFeesTable(); } return; }
   if(el.dataset.rev){ const v = parseFloat(el.value); if(!isNaN(v)){ state.rev[el.dataset.rev] = v; saveState(); refreshFeesTable(); } return; }
 });
-function refreshFeesTable(){ const a = document.activeElement, sel = a && a.dataset ? (a.dataset.rev ? `[data-rev="${a.dataset.rev}"]` : (a.hasAttribute && a.hasAttribute("data-perps-bps") ? "[data-perps-bps]" : null)) : null;
+function refreshFeesTable(){ const a = document.activeElement, sel = a && a.dataset && a.dataset.rev ? `[data-rev="${a.dataset.rev}"]` : null;
   renderFees(); if(sel){ const n = document.querySelector("#feesBody " + sel); if(n){ n.focus(); const L = n.value.length; try{ n.setSelectionRange(L, L); }catch(e){} } } }
 document.getElementById("fileInput").addEventListener("change", e => {
   const f = e.target.files && e.target.files[0]; if(!f) return;
@@ -904,7 +1025,7 @@ function loadPublishedData(){
 }
 if(window.matchMedia){ const mq = matchMedia("(prefers-color-scheme: dark)"); mq.addEventListener ? mq.addEventListener("change", renderCurrent) : mq.addListener(renderCurrent); }
 new MutationObserver(() => { ANIM = false; renderCurrent(); }).observe(document.documentElement, { attributes:true, attributeFilter:["data-theme"] });
-function boot(){ document.querySelectorAll("[data-perps-bps]").forEach(x => x.value = state.perps.bps); updateStatus(); show(location.hash.slice(1) || "volume"); loadPublishedData(); }
+function boot(){ updateStatus(); show(location.hash.slice(1) || "volume"); loadPublishedData(); }
 function start(){
   if(window.Chart){ Chart.defaults.font.family = "Archivo, system-ui, sans-serif"; boot(); return; }
   const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js";
