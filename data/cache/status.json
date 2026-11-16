@@ -1,8 +1,8 @@
 {
  "complete": false,
  "missing_days": {
-  "events": 590,
-  "perps": 111,
+  "events": 0,
+  "perps": 24,
   "hyperliquid": 171
  },
  "first": "2025-01-01",
@@ -10,27 +10,27 @@
  "stopped_early": true,
  "progress_made": true,
  "run": {
-  "started": "2026-11-16T08:25:17+00:00",
-  "finished": "2026-11-16T10:16:31+00:00",
-  "minutes": 111.2,
+  "started": "2026-11-16T10:16:56+00:00",
+  "finished": "2026-11-16T12:02:58+00:00",
+  "minutes": 106.0,
   "rps": 4.0,
   "workers": 3,
-  "requests": 25892,
-  "pages": 25336,
+  "requests": 25430,
+  "pages": 25243,
   "http_429": 0,
   "http_5xx": 0,
   "network_errors": 0,
-  "pages_per_s": 3.8,
+  "pages_per_s": 3.97,
   "progress": {
-   "events_days": 88,
-   "perps_days": 60,
+   "events_days": 590,
+   "perps_days": 87,
    "hyperliquid_days": 0
   },
   "progress_made": true,
   "not_yet_published": [],
   "remaining_days": {
-   "events": 590,
-   "perps": 111,
+   "events": 0,
+   "perps": 24,
    "hyperliquid": 171
   },
   "stopped_early": true,

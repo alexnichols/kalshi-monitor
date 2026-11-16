@@ -77,6 +77,18 @@
 "tries": 1,
 "via": "/markets/KXBTCMINMON-BTC-26NOV30-5750000 -> /events/KXBTCMINMON-BTC-26NOV30"
 },
+"KXCOACHOUTAUB-AUB": {
+"category": "Sports",
+"example": "KXCOACHOUTAUB-AUB-26-AUB",
+"tries": 1,
+"via": "/historical/markets/KXCOACHOUTAUB-AUB-26-AUB -> /events/KXCOACHOUTAUB-AUB"
+},
+"KXCOACHOUTDALWINGS-DAL": {
+"category": "Sports",
+"example": "KXCOACHOUTDALWINGS-DAL-26-DAL",
+"tries": 1,
+"via": "/historical/markets/KXCOACHOUTDALWINGS-DAL-26-DAL -> /events/KXCOACHOUTDALWINGS-DAL"
+},
 "KXCOLLECTIONSALE-BLA": {
 "category": "Entertainment",
 "example": "KXCOLLECTIONSALE-BLA-18NOV26-390000000",
@@ -395,6 +407,228 @@
 "tries": 1,
 "via": "/markets/KXINSCOMMRACE-MS-27-D -> /events/KXINSCOMMRACE-MS-27"
 },
+"KXMAXTPSAVAX-AVALANCHE": {
+"category": "Crypto",
+"example": "KXMAXTPSAVAX-AVALANCHE-26JAN01-300",
+"tries": 1,
+"via": "/historical/markets/KXMAXTPSAVAX-AVALANCHE-26JAN01-300 -> /events/KXMAXTPSAVAX-AVALANCHE-26JAN01"
+},
+"KXNBAMENTION-ALLSTARGAME": {
+"category": "Mentions",
+"example": "KXNBAMENTION-ALLSTARGAME-26-INJU",
+"tries": 1,
+"via": "/historical/markets/KXNBAMENTION-ALLSTARGAME-26-INJU -> /events/KXNBAMENTION-ALLSTARGAME-26"
+},
+"KXNBAMENTION-KXNBACELEBRITYGAME": {
+"category": "Mentions",
+"example": "KXNBAMENTION-KXNBACELEBRITYGAME-26-TECH",
+"tries": 1,
+"via": "/historical/markets/KXNBAMENTION-KXNBACELEBRITYGAME-26-TECH -> /events/KXNBAMENTION-KXNBACELEBRITYGAME-26"
+},
+"KXNBAMENTION-KXNBARISINGSTARS": {
+"category": "Mentions",
+"example": "KXNBAMENTION-KXNBARISINGSTARS-26-AIRB",
+"tries": 1,
+"via": "/historical/markets/KXNBAMENTION-KXNBARISINGSTARS-26-AIRB -> /events/KXNBAMENTION-KXNBARISINGSTARS-26"
+},
+"KXNBAWINS-ATL": {
+"category": "Sports",
+"example": "KXNBAWINS-ATL-25-T55",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-ATL-25-T55 -> /events/KXNBAWINS-ATL-25"
+},
+"KXNBAWINS-BKN": {
+"category": "Sports",
+"example": "KXNBAWINS-BKN-25-T30",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-BKN-25-T30 -> /events/KXNBAWINS-BKN-25"
+},
+"KXNBAWINS-BOS": {
+"category": "Sports",
+"example": "KXNBAWINS-BOS-25-T50",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-BOS-25-T50 -> /events/KXNBAWINS-BOS-25"
+},
+"KXNBAWINS-CHA": {
+"category": "Sports",
+"example": "KXNBAWINS-CHA-25-T45",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-CHA-25-T45 -> /events/KXNBAWINS-CHA-25"
+},
+"KXNBAWINS-CHI": {
+"category": "Sports",
+"example": "KXNBAWINS-CHI-25-T30",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-CHI-25-T30 -> /events/KXNBAWINS-CHI-25"
+},
+"KXNBAWINS-CLE": {
+"category": "Sports",
+"example": "KXNBAWINS-CLE-25-T55",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-CLE-25-T55 -> /events/KXNBAWINS-CLE-25"
+},
+"KXNBAWINS-DAL": {
+"category": "Sports",
+"example": "KXNBAWINS-DAL-25-T45",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-DAL-25-T45 -> /events/KXNBAWINS-DAL-25"
+},
+"KXNBAWINS-DEN": {
+"category": "Sports",
+"example": "KXNBAWINS-DEN-25-T55",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-DEN-25-T55 -> /events/KXNBAWINS-DEN-25"
+},
+"KXNBAWINS-DET": {
+"category": "Sports",
+"example": "KXNBAWINS-DET-25-T60",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-DET-25-T60 -> /events/KXNBAWINS-DET-25"
+},
+"KXNBAWINS-GSW": {
+"category": "Sports",
+"example": "KXNBAWINS-GSW-25-T40",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-GSW-25-T40 -> /events/KXNBAWINS-GSW-25"
+},
+"KXNBAWINS-HOU": {
+"category": "Sports",
+"example": "KXNBAWINS-HOU-25-T55",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-HOU-25-T55 -> /events/KXNBAWINS-HOU-25"
+},
+"KXNBAWINS-IND": {
+"category": "Sports",
+"example": "KXNBAWINS-IND-25-T20",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-IND-25-T20 -> /events/KXNBAWINS-IND-25"
+},
+"KXNBAWINS-LAC": {
+"category": "Sports",
+"example": "KXNBAWINS-LAC-25-T45",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-LAC-25-T45 -> /events/KXNBAWINS-LAC-25"
+},
+"KXNBAWINS-LAL": {
+"category": "Sports",
+"example": "KXNBAWINS-LAL-25-T55",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-LAL-25-T55 -> /events/KXNBAWINS-LAL-25"
+},
+"KXNBAWINS-MEM": {
+"category": "Sports",
+"example": "KXNBAWINS-MEM-25-T20",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-MEM-25-T20 -> /events/KXNBAWINS-MEM-25"
+},
+"KXNBAWINS-MIA": {
+"category": "Sports",
+"example": "KXNBAWINS-MIA-25-T40",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-MIA-25-T40 -> /events/KXNBAWINS-MIA-25"
+},
+"KXNBAWINS-MIL": {
+"category": "Sports",
+"example": "KXNBAWINS-MIL-25-T35",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-MIL-25-T35 -> /events/KXNBAWINS-MIL-25"
+},
+"KXNBAWINS-MIN": {
+"category": "Sports",
+"example": "KXNBAWINS-MIN-25-T50",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-MIN-25-T50 -> /events/KXNBAWINS-MIN-25"
+},
+"KXNBAWINS-NOP": {
+"category": "Sports",
+"example": "KXNBAWINS-NOP-25-T25",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-NOP-25-T25 -> /events/KXNBAWINS-NOP-25"
+},
+"KXNBAWINS-NYK": {
+"category": "Sports",
+"example": "KXNBAWINS-NYK-25-T55",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-NYK-25-T55 -> /events/KXNBAWINS-NYK-25"
+},
+"KXNBAWINS-OKC": {
+"category": "Sports",
+"example": "KXNBAWINS-OKC-25-T65",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-OKC-25-T65 -> /events/KXNBAWINS-OKC-25"
+},
+"KXNBAWINS-ORL": {
+"category": "Sports",
+"example": "KXNBAWINS-ORL-25-T50",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-ORL-25-T50 -> /events/KXNBAWINS-ORL-25"
+},
+"KXNBAWINS-PHI": {
+"category": "Sports",
+"example": "KXNBAWINS-PHI-25-T45",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-PHI-25-T45 -> /events/KXNBAWINS-PHI-25"
+},
+"KXNBAWINS-PHX": {
+"category": "Sports",
+"example": "KXNBAWINS-PHX-25-T50",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-PHX-25-T50 -> /events/KXNBAWINS-PHX-25"
+},
+"KXNBAWINS-POR": {
+"category": "Sports",
+"example": "KXNBAWINS-POR-25-T45",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-POR-25-T45 -> /events/KXNBAWINS-POR-25"
+},
+"KXNBAWINS-SAC": {
+"category": "Sports",
+"example": "KXNBAWINS-SAC-25-T20",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-SAC-25-T20 -> /events/KXNBAWINS-SAC-25"
+},
+"KXNBAWINS-SAS": {
+"category": "Sports",
+"example": "KXNBAWINS-SAS-25-T60",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-SAS-25-T60 -> /events/KXNBAWINS-SAS-25"
+},
+"KXNBAWINS-TOR": {
+"category": "Sports",
+"example": "KXNBAWINS-TOR-25-T55",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-TOR-25-T55 -> /events/KXNBAWINS-TOR-25"
+},
+"KXNBAWINS-UTA": {
+"category": "Sports",
+"example": "KXNBAWINS-UTA-25-T25",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-UTA-25-T25 -> /events/KXNBAWINS-UTA-25"
+},
+"KXNBAWINS-WAS": {
+"category": "Sports",
+"example": "KXNBAWINS-WAS-25-T20",
+"tries": 1,
+"via": "/historical/markets/KXNBAWINS-WAS-25-T20 -> /events/KXNBAWINS-WAS-25"
+},
+"KXNCAABMENTION-ACC": {
+"category": "Mentions",
+"example": "KXNCAABMENTION-ACC-26-DRAF",
+"tries": 1,
+"via": "/historical/markets/KXNCAABMENTION-ACC-26-DRAF -> /events/KXNCAABMENTION-ACC-26"
+},
+"KXNCAABMENTION-BIGEAST": {
+"category": "Mentions",
+"example": "KXNCAABMENTION-BIGEAST-26-MSG",
+"tries": 1,
+"via": "/historical/markets/KXNCAABMENTION-BIGEAST-26-MSG -> /events/KXNCAABMENTION-BIGEAST-26"
+},
+"KXNCAABMENTION-WCC": {
+"category": "Mentions",
+"example": "KXNCAABMENTION-WCC-26-NQE",
+"tries": 1,
+"via": "/historical/markets/KXNCAABMENTION-WCC-26-NQE -> /events/KXNCAABMENTION-WCC-26"
+},
 "KXNEARMAXY-NEAR": {
 "category": "Crypto",
 "example": "KXNEARMAXY-NEAR-26DEC31-550",
@@ -412,6 +646,12 @@
 "example": "KXNEWOUTBREAK-P-26",
 "tries": 1,
 "via": "/markets/KXNEWOUTBREAK-P-26 -> /events/KXNEWOUTBREAK-P-26"
+},
+"KXNGASMAX-B": {
+"category": "Economics",
+"example": "KXNGASMAX-B-25DEC29-P5",
+"tries": 1,
+"via": "/historical/markets/KXNGASMAX-B-25DEC29-P5 -> /events/KXNGASMAX-B-25DEC29"
 },
 "KXPRESDISTRICT-DC": {
 "category": "Elections",
@@ -718,6 +958,12 @@
 "example": "KXREDISTRICTBANHOUSE-26NOV",
 "tries": 1,
 "via": "/series/KXREDISTRICTBANHOUSE"
+},
+"KXRWAMCAPAVAX-AVALANCHE": {
+"category": "Crypto",
+"example": "KXRWAMCAPAVAX-AVALANCHE-26JAN01-700",
+"tries": 1,
+"via": "/historical/markets/KXRWAMCAPAVAX-AVALANCHE-26JAN01-700 -> /events/KXRWAMCAPAVAX-AVALANCHE-26JAN01"
 },
 "KXSENATENOM-ALR": {
 "category": "Elections",
@@ -1061,17 +1307,47 @@
 "tries": 1,
 "via": "/series/KXTRUMPHUANGBACK"
 },
+"KXTVSEASONANNOUNCE-JAN": {
+"category": "Entertainment",
+"example": "KXTVSEASONANNOUNCE-JAN-27-SUM",
+"tries": 1,
+"via": "/historical/markets/KXTVSEASONANNOUNCE-JAN-27-SUM -> /events/KXTVSEASONANNOUNCE-JAN"
+},
 "KXTVSEASONANNOUNCE-JANB": {
 "category": "Entertainment",
 "example": "KXTVSEASONANNOUNCE-JANB-27-ENT",
 "tries": 1,
 "via": "/markets/KXTVSEASONANNOUNCE-JANB-27-ENT -> /events/KXTVSEASONANNOUNCE-JANB"
 },
+"KXUSDHVOTE-USDH": {
+"category": "Crypto",
+"example": "KXUSDHVOTE-USDH-26JAN01-NATIVE",
+"tries": 1,
+"via": "/historical/markets/KXUSDHVOTE-USDH-26JAN01-NATIVE -> /events/KXUSDHVOTE-USDH-26JAN01"
+},
+"KXVENEZUELADEPLOY-SENATE": {
+"category": "Politics",
+"example": "KXVENEZUELADEPLOY-SENATE-26JAN04-MAR26",
+"tries": 1,
+"via": "/historical/markets/KXVENEZUELADEPLOY-SENATE-26JAN04-MAR26 -> /events/KXVENEZUELADEPLOY-SENATE-26JAN04"
+},
 "KXVOTEPRIMARY-KXAKSENADVANCE": {
 "category": "Elections",
 "example": "KXVOTEPRIMARY-KXAKSENADVANCE-26AUG18-DJSULDJSUL-51",
 "tries": 1,
 "via": "/historical/markets/KXVOTEPRIMARY-KXAKSENADVANCE-26AUG18-DJSULDJSUL-51 -> /events/KXVOTEPRIMARY-KXAKSENADVANCE-26AUG18-DJSULDJSUL"
+},
+"KXVOTEPRIMARY-KXSENATEALR": {
+"category": "Elections",
+"example": "KXVOTEPRIMARY-KXSENATEALR-26-SMARSMAR-22",
+"tries": 1,
+"via": "/historical/markets/KXVOTEPRIMARY-KXSENATEALR-26-SMARSMAR-22 -> /events/KXVOTEPRIMARY-KXSENATEALR-26-SMARSMAR"
+},
+"KXWBCMENTION-WORLD": {
+"category": "Mentions",
+"example": "KXWBCMENTION-WORLD-26-WILD",
+"tries": 1,
+"via": "/historical/markets/KXWBCMENTION-WORLD-26-WILD -> /events/KXWBCMENTION-WORLD-26"
 },
 "KXXRPMAXMON-XRP": {
 "category": "Crypto",
