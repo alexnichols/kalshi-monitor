@@ -439,6 +439,33 @@ class Perps(unittest.TestCase):
         self.assertFalse(out["run"]["stopped_early"] and out["run"]["remaining_days"]["events"])
         self.assertTrue(out["run"]["progress_made"])
 
+    def test_hyperliquid_runs_before_perps_days(self):
+        # Hyperliquid's candle window slides (1m reaches ~3.5 days back, 1h ~208 days), so it must not
+        # wait behind a perps backfill that can take a whole run; otherwise days are lost for good.
+        now = ts("2026-11-15T00:30:00Z")
+        order = []
+        fk = FakeKalshi([], 0, margin={"markets": self.markets(), "trades": self.trades(now)})
+        get = fk.get
+        def kget(url, params=None, timeout=None):
+            if url.endswith("/margin/trades") and (params or {}).get("min_ts", 0) % 86400 == 86399:
+                order.append("perps day")
+            return get(url, params, timeout)
+        fk.get = kget
+        hl = FakeHL({})
+        post = hl.post
+        def hpost(url, json=None, timeout=None):
+            if json["type"] == "candleSnapshot":
+                order.append("hyperliquid")
+            return post(url, json, timeout)
+        hl.post = hpost
+        tmp = tempfile.mkdtemp()
+        kp.main(["--cache", tmp, "--out", os.path.join(tmp, "o.json"), "--end", "2026-11-14", "--start", "2026-11-14",
+                 "--rps", "1000000", "--workers", "0", "--skip-trades"], session=fk, hl_session=hl,
+                today=dt.date(2026, 11, 15), now_ts=now, sleep=lambda s: None)
+        self.assertIn("hyperliquid", order)
+        self.assertIn("perps day", order)
+        self.assertLess(order.index("hyperliquid"), order.index("perps day"))
+
 
 # --------------------------------------------------------------------------- Hyperliquid
 class FakeHL:

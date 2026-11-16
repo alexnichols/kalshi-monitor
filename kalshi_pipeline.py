@@ -1029,8 +1029,10 @@ def main(argv=None, session=None, hl_session=None, today=None, now_ts=None, slee
                for d in ev_todo} if pool else {}
     plan = []
     if not a.skip_perps and perps_error is None:
-        plan += [("perps", d) for d in pk_todo]
+        # Hyperliquid first: its candle window slides (1m ~3.5 days, 1h ~208 days back), so waiting
+        # behind a long perps backfill would lose days for good. It is a few minutes on its own API.
         plan.append(("hyperliquid", hl_todo))
+        plan += [("perps", d) for d in pk_todo]
     for kind, arg in plan:
         if perps_error:
             break
