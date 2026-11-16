@@ -1,12 +1,12 @@
 {
  "rule": "count_x_price",
- "weighted_error": 1.520973738670095e-07,
+ "weighted_error": 1.358743786715859e-07,
  "markets_checked": 86,
- "checked_at": "2026-11-16T10:16:56.156322+00:00",
+ "checked_at": "2026-11-16T12:03:21.370232+00:00",
  "all_rules": {
-  "count_x_price": 1.520973738670095e-07,
-  "count_x_price_x_contract_size": 1.4024835766635517,
-  "count_x_price_x_contract_size_x_multiplier": 316.8295817673257
+  "count_x_price": 1.358743786715859e-07,
+  "count_x_price_x_contract_size": 1.3333391877271545,
+  "count_x_price_x_contract_size_x_multiplier": 254.50761817594883
  },
  "per_market": {
   "KXAAPLPERP": {
@@ -15,62 +15,62 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXAAVEPERP": {
-   "count_x_price": 0.0,
-   "count_x_price_x_contract_size": -0.99,
-   "count_x_price_x_contract_size_x_multiplier": -0.99
+   "count_x_price": 2.355151015898116e-05,
+   "count_x_price_x_contract_size": -0.9899997644848985,
+   "count_x_price_x_contract_size_x_multiplier": -0.9899997644848985
   },
   "KXABBVPERP": {
-   "count_x_price": 2.4424906541753444e-15,
+   "count_x_price": 1.9984014443252818e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXADAPERP": {
-   "count_x_price": -1.1536301912640212e-06,
-   "count_x_price_x_contract_size": -1.1536301912640212e-06,
-   "count_x_price_x_contract_size_x_multiplier": -1.1536301912640212e-06
+   "count_x_price": 1.5543122344752192e-15,
+   "count_x_price_x_contract_size": 1.5543122344752192e-15,
+   "count_x_price_x_contract_size_x_multiplier": 1.5543122344752192e-15
   },
   "KXADBEPERP": {
-   "count_x_price": 4.440892098500626e-16,
+   "count_x_price": -3.3306690738754696e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXALUMINUMPERP": {
-   "count_x_price": -7.771561172376096e-16,
+   "count_x_price": -3.3306690738754696e-16,
    "count_x_price_x_contract_size": -0.999,
    "count_x_price_x_contract_size_x_multiplier": -0.999
   },
   "KXAMATPERP": {
-   "count_x_price": -2.220446049250313e-16,
+   "count_x_price": 8.881784197001252e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXAMDPERP": {
-   "count_x_price": 3.3306690738754696e-15,
-   "count_x_price_x_contract_size": -0.98,
-   "count_x_price_x_contract_size_x_multiplier": -0.98
+   "count_x_price": 3.774758283725532e-15,
+   "count_x_price_x_contract_size": -0.9799999999999999,
+   "count_x_price_x_contract_size_x_multiplier": -0.9799999999999999
   },
   "KXAMGNPERP": {
-   "count_x_price": -2.220446049250313e-16,
+   "count_x_price": -3.3306690738754696e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXAMZNPERP": {
-   "count_x_price": -3.6637359812630166e-15,
+   "count_x_price": -3.885780586188048e-15,
    "count_x_price_x_contract_size": -0.9800000000000001,
    "count_x_price_x_contract_size_x_multiplier": -0.9800000000000001
   },
   "KXAVGOPERP": {
-   "count_x_price": -6.661338147750939e-16,
+   "count_x_price": 6.661338147750939e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXBABAPERP": {
-   "count_x_price": -8.881784197001252e-16,
+   "count_x_price": -9.992007221626409e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXBACPERP": {
-   "count_x_price": 1.9984014443252818e-15,
+   "count_x_price": 1.3322676295501878e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
@@ -90,9 +90,9 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXBNBPERP": {
-   "count_x_price": -2.142742783206586e-08,
-   "count_x_price_x_contract_size": -0.9990000000214274,
-   "count_x_price_x_contract_size_x_multiplier": -0.9990000000214274
+   "count_x_price": -2.220446049250313e-15,
+   "count_x_price_x_contract_size": -0.999,
+   "count_x_price_x_contract_size_x_multiplier": -0.999
   },
   "KXBRKBPERP": {
    "count_x_price": 2.220446049250313e-16,
@@ -100,17 +100,17 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXBTCPERP": {
-   "count_x_price": 7.519340883277437e-08,
-   "count_x_price_x_contract_size": -0.9998999999924807,
-   "count_x_price_x_contract_size_x_multiplier": -0.9998999999924807
+   "count_x_price": 8.881784197001252e-16,
+   "count_x_price_x_contract_size": -0.9999,
+   "count_x_price_x_contract_size_x_multiplier": -0.9999
   },
   "KXCATPERP": {
-   "count_x_price": 4.440892098500626e-16,
+   "count_x_price": 6.661338147750939e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXCOPPERP": {
-   "count_x_price": -7.771561172376096e-16,
+   "count_x_price": -1.1102230246251565e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
@@ -120,42 +120,42 @@
    "count_x_price_x_contract_size_x_multiplier": 6.661338147750939e-16
   },
   "KXCOSTPERP": {
-   "count_x_price": -1.5543122344752192e-15,
-   "count_x_price_x_contract_size": -0.98,
-   "count_x_price_x_contract_size_x_multiplier": -0.98
+   "count_x_price": -3.219646771412954e-15,
+   "count_x_price_x_contract_size": -0.9800000000000001,
+   "count_x_price_x_contract_size_x_multiplier": -0.9800000000000001
   },
   "KXCRMPERP": {
-   "count_x_price": 2.220446049250313e-16,
+   "count_x_price": 0.0,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXCSCOPERP": {
-   "count_x_price": -7.771561172376096e-16,
+   "count_x_price": -6.661338147750939e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXCVXPERP": {
-   "count_x_price": -3.9968028886505635e-15,
+   "count_x_price": -4.9960036108132044e-15,
    "count_x_price_x_contract_size": -0.9800000000000001,
    "count_x_price_x_contract_size_x_multiplier": -0.9800000000000001
   },
   "KXDISPERP": {
-   "count_x_price": 4.440892098500626e-16,
+   "count_x_price": 0.0,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXDOGEPERP": {
-   "count_x_price": -1.3093054666013515e-06,
-   "count_x_price_x_contract_size": 98.99986906945333,
-   "count_x_price_x_contract_size_x_multiplier": 98.99986906945333
+   "count_x_price": -2.55351295663786e-15,
+   "count_x_price_x_contract_size": 98.99999999999973,
+   "count_x_price_x_contract_size_x_multiplier": 98.99999999999973
   },
   "KXETHPERP": {
-   "count_x_price": -3.745769405760768e-08,
-   "count_x_price_x_contract_size": -0.9990000000374577,
-   "count_x_price_x_contract_size_x_multiplier": -0.9990000000374577
+   "count_x_price": 1.4029673933713127e-07,
+   "count_x_price_x_contract_size": -0.9989999998597032,
+   "count_x_price_x_contract_size_x_multiplier": -0.9989999998597032
   },
   "KXGOLDPERP": {
-   "count_x_price": -2.6645352591003757e-15,
+   "count_x_price": -4.218847493575595e-15,
    "count_x_price_x_contract_size": -0.999,
    "count_x_price_x_contract_size_x_multiplier": -0.999
   },
@@ -165,22 +165,22 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXHDPERP": {
-   "count_x_price": -1.9984014443252818e-15,
-   "count_x_price_x_contract_size": -0.9800000000000001,
-   "count_x_price_x_contract_size_x_multiplier": -0.9800000000000001
+   "count_x_price": -1.5543122344752192e-15,
+   "count_x_price_x_contract_size": -0.98,
+   "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXHYPEPERP": {
-   "count_x_price": -1.6639421240860486e-07,
-   "count_x_price_x_contract_size": -0.9000000166394212,
-   "count_x_price_x_contract_size_x_multiplier": -0.9000000166394212
+   "count_x_price": -1.8262433363336328e-05,
+   "count_x_price_x_contract_size": -0.9000018262433364,
+   "count_x_price_x_contract_size_x_multiplier": -0.9000018262433364
   },
   "KXIBMPERP": {
-   "count_x_price": 6.661338147750939e-16,
+   "count_x_price": 8.881784197001252e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXINTCPERP": {
-   "count_x_price": 2.220446049250313e-16,
+   "count_x_price": 1.1102230246251565e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
@@ -190,24 +190,24 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXJPMPERP": {
-   "count_x_price": 6.661338147750939e-16,
+   "count_x_price": 4.440892098500626e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXKOPERP": {
-   "count_x_price": -4.440892098500626e-16,
+   "count_x_price": 0.0,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXKSHIBPERP": {
-   "count_x_price": -1.7377131510398769e-06,
-   "count_x_price_x_contract_size": 998.998262286849,
-   "count_x_price_x_contract_size_x_multiplier": 999997.262286849
+   "count_x_price": -5.551115123125783e-16,
+   "count_x_price_x_contract_size": 998.9999999999994,
+   "count_x_price_x_contract_size_x_multiplier": 999998.9999999994
   },
   "KXLINKPERP": {
-   "count_x_price": 2.220446049250313e-16,
-   "count_x_price_x_contract_size": 2.220446049250313e-16,
-   "count_x_price_x_contract_size_x_multiplier": 2.220446049250313e-16
+   "count_x_price": 3.73203768644359e-06,
+   "count_x_price_x_contract_size": 3.73203768644359e-06,
+   "count_x_price_x_contract_size_x_multiplier": 3.73203768644359e-06
   },
   "KXLLYPERP": {
    "count_x_price": 1.3322676295501878e-15,
@@ -215,14 +215,14 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXLMTPERP": {
-   "count_x_price": -1.3322676295501878e-15,
+   "count_x_price": -1.2212453270876722e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXLTCPERP": {
-   "count_x_price": -6.444515360004566e-05,
-   "count_x_price_x_contract_size": -0.9000064445153599,
-   "count_x_price_x_contract_size_x_multiplier": -0.9000064445153599
+   "count_x_price": -1.540647302444853e-05,
+   "count_x_price_x_contract_size": -0.9000015406473024,
+   "count_x_price_x_contract_size_x_multiplier": -0.9000015406473024
   },
   "KXMAPERP": {
    "count_x_price": -4.440892098500626e-16,
@@ -230,12 +230,12 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXMCDPERP": {
-   "count_x_price": -7.771561172376096e-16,
+   "count_x_price": -3.3306690738754696e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXMETAPERP": {
-   "count_x_price": -4.440892098500626e-16,
+   "count_x_price": 1.1102230246251565e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
@@ -245,7 +245,7 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXMSFTPERP": {
-   "count_x_price": 2.220446049250313e-15,
+   "count_x_price": 2.4424906541753444e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
@@ -255,12 +255,12 @@
    "count_x_price_x_contract_size_x_multiplier": -0.9800000000000001
   },
   "KXNEARPERP": {
-   "count_x_price": -5.244549283744959e-08,
-   "count_x_price_x_contract_size": -5.244549283744959e-08,
-   "count_x_price_x_contract_size_x_multiplier": -5.244549283744959e-08
+   "count_x_price": 2.220446049250313e-16,
+   "count_x_price_x_contract_size": 2.220446049250313e-16,
+   "count_x_price_x_contract_size_x_multiplier": 2.220446049250313e-16
   },
   "KXNEMPERP": {
-   "count_x_price": -5.551115123125783e-16,
+   "count_x_price": 8.881784197001252e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
@@ -270,42 +270,42 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXNVDAPERP": {
-   "count_x_price": 1.1102230246251565e-15,
+   "count_x_price": -1.2212453270876722e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXORCLPERP": {
-   "count_x_price": 4.440892098500626e-16,
+   "count_x_price": -6.661338147750939e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXPALLADIUMPERP": {
-   "count_x_price": -4.551914400963142e-15,
+   "count_x_price": -2.4424906541753444e-15,
    "count_x_price_x_contract_size": -0.999,
    "count_x_price_x_contract_size_x_multiplier": -0.999
   },
   "KXPANWPERP": {
-   "count_x_price": 1.3322676295501878e-15,
-   "count_x_price_x_contract_size": -0.98,
-   "count_x_price_x_contract_size_x_multiplier": -0.98
-  },
-  "KXPEPPERP": {
-   "count_x_price": 6.661338147750939e-16,
-   "count_x_price_x_contract_size": -0.98,
-   "count_x_price_x_contract_size_x_multiplier": -0.98
-  },
-  "KXPFEPERP": {
    "count_x_price": 8.881784197001252e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
+  "KXPEPPERP": {
+   "count_x_price": 2.220446049250313e-15,
+   "count_x_price_x_contract_size": -0.98,
+   "count_x_price_x_contract_size_x_multiplier": -0.98
+  },
+  "KXPFEPERP": {
+   "count_x_price": 1.1102230246251565e-15,
+   "count_x_price_x_contract_size": -0.98,
+   "count_x_price_x_contract_size_x_multiplier": -0.98
+  },
   "KXPGPERP": {
-   "count_x_price": -1.1102230246251565e-16,
+   "count_x_price": 0.0,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXPLATINUMPERP": {
-   "count_x_price": -5.551115123125783e-16,
+   "count_x_price": -8.881784197001252e-16,
    "count_x_price_x_contract_size": -0.999,
    "count_x_price_x_contract_size_x_multiplier": -0.999
   },
@@ -315,7 +315,7 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXPLTRPERP": {
-   "count_x_price": 1.9984014443252818e-15,
+   "count_x_price": 1.1102230246251565e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
@@ -330,62 +330,62 @@
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXSBUXPERP": {
-   "count_x_price": 4.440892098500626e-16,
+   "count_x_price": 2.220446049250313e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXSILVERPERP": {
-   "count_x_price": 6.217248937900877e-15,
-   "count_x_price_x_contract_size": -0.8999999999999994,
-   "count_x_price_x_contract_size_x_multiplier": -0.8999999999999994
-  },
-  "KXSNDKPERP": {
-   "count_x_price": 2.4424906541753444e-15,
-   "count_x_price_x_contract_size": -0.98,
-   "count_x_price_x_contract_size_x_multiplier": -0.98
-  },
-  "KXSOLPERP": {
    "count_x_price": 3.3306690738754696e-15,
    "count_x_price_x_contract_size": -0.8999999999999997,
    "count_x_price_x_contract_size_x_multiplier": -0.8999999999999997
   },
+  "KXSNDKPERP": {
+   "count_x_price": 2.886579864025407e-15,
+   "count_x_price_x_contract_size": -0.98,
+   "count_x_price_x_contract_size_x_multiplier": -0.98
+  },
+  "KXSOLPERP": {
+   "count_x_price": -3.372869739060036e-08,
+   "count_x_price_x_contract_size": -0.9000000033728698,
+   "count_x_price_x_contract_size_x_multiplier": -0.9000000033728698
+  },
   "KXSPCXPERP": {
-   "count_x_price": 2.220446049250313e-16,
+   "count_x_price": 0.0,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXSPYPERP": {
-   "count_x_price": 2.220446049250313e-15,
+   "count_x_price": 2.6645352591003757e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXSUIPERP": {
-   "count_x_price": -1.4359253678208894e-05,
-   "count_x_price_x_contract_size": 8.999856407463218,
-   "count_x_price_x_contract_size_x_multiplier": 8.999856407463218
+   "count_x_price": 4.440892098500626e-16,
+   "count_x_price_x_contract_size": 9.000000000000005,
+   "count_x_price_x_contract_size_x_multiplier": 9.000000000000005
   },
   "KXTSLAPERP": {
-   "count_x_price": 2.220446049250313e-16,
+   "count_x_price": -6.661338147750939e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXTXNPERP": {
-   "count_x_price": -9.992007221626409e-16,
+   "count_x_price": -3.3306690738754696e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXUNHPERP": {
-   "count_x_price": 6.661338147750939e-16,
+   "count_x_price": -8.881784197001252e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXUNIPERP": {
-   "count_x_price": 1.0215338597241441e-07,
-   "count_x_price_x_contract_size": 1.0215338597241441e-07,
-   "count_x_price_x_contract_size_x_multiplier": 1.0215338597241441e-07
+   "count_x_price": -8.881784197001252e-16,
+   "count_x_price_x_contract_size": -8.881784197001252e-16,
+   "count_x_price_x_contract_size_x_multiplier": -8.881784197001252e-16
   },
   "KXUS500PERP": {
-   "count_x_price": 6.439293542825908e-15,
+   "count_x_price": 5.773159728050814e-15,
    "count_x_price_x_contract_size": -0.999,
    "count_x_price_x_contract_size_x_multiplier": -0.999
   },
@@ -395,49 +395,49 @@
    "count_x_price_x_contract_size_x_multiplier": -0.9999
   },
   "KXVPERP": {
-   "count_x_price": -2.220446049250313e-16,
+   "count_x_price": -4.440892098500626e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXVVVPERP": {
-   "count_x_price": 1.4698955692615812e-06,
-   "count_x_price_x_contract_size": -0.899999853010443,
-   "count_x_price_x_contract_size_x_multiplier": -0.899999853010443
+   "count_x_price": -1.2212453270876722e-15,
+   "count_x_price_x_contract_size": -0.9000000000000001,
+   "count_x_price_x_contract_size_x_multiplier": -0.9000000000000001
   },
   "KXVZPERP": {
-   "count_x_price": -5.551115123125783e-16,
+   "count_x_price": -6.661338147750939e-16,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXWLDPERP": {
-   "count_x_price": 7.898784737392361e-09,
-   "count_x_price_x_contract_size": 7.898784737392361e-09,
-   "count_x_price_x_contract_size_x_multiplier": 7.898784737392361e-09
+   "count_x_price": -2.1272657446669285e-07,
+   "count_x_price_x_contract_size": -2.1272657446669285e-07,
+   "count_x_price_x_contract_size_x_multiplier": -2.1272657446669285e-07
   },
   "KXWMTPERP": {
-   "count_x_price": -2.886579864025407e-15,
+   "count_x_price": -2.55351295663786e-15,
    "count_x_price_x_contract_size": -0.9800000000000001,
    "count_x_price_x_contract_size_x_multiplier": -0.9800000000000001
   },
   "KXWTIFUTURE": {
-   "count_x_price": 4.440892098500626e-16,
+   "count_x_price": 8.881784197001252e-16,
    "count_x_price_x_contract_size": -0.99,
    "count_x_price_x_contract_size_x_multiplier": -0.99
   },
   "KXXOMPERP": {
-   "count_x_price": 2.6645352591003757e-15,
+   "count_x_price": 3.552713678800501e-15,
    "count_x_price_x_contract_size": -0.98,
    "count_x_price_x_contract_size_x_multiplier": -0.98
   },
   "KXXRPPERP": {
-   "count_x_price": -2.076464444833448e-09,
-   "count_x_price_x_contract_size": -2.076464444833448e-09,
-   "count_x_price_x_contract_size_x_multiplier": -2.076464444833448e-09
+   "count_x_price": 6.661338147750939e-16,
+   "count_x_price_x_contract_size": 6.661338147750939e-16,
+   "count_x_price_x_contract_size_x_multiplier": 6.661338147750939e-16
   },
   "KXZECPERP": {
-   "count_x_price": -1.65598268173639e-05,
-   "count_x_price_x_contract_size": -0.9900001655982682,
-   "count_x_price_x_contract_size_x_multiplier": -0.9900001655982682
+   "count_x_price": -3.145196841414233e-06,
+   "count_x_price_x_contract_size": -0.9900000314519685,
+   "count_x_price_x_contract_size_x_multiplier": -0.9900000314519685
   }
  }
 }
