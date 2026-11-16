@@ -76,11 +76,16 @@ Event contracts
 - Rounding as each schedule defines it: the fee rounded up to the cent before Jul 7, 2026; from
   then, fee + positionCost rounded up to a whole centicent. Integer arithmetic; matches all 42
   figures in Kalshi's General Trading Fees Table. Kalshi rounds per order and the report shows fills,
-  so the headline rounds each fill, and every fee figure carries an exact range: unrounded (the
-  least any order can be charged) to whole-cent rounding on every fill (the most). The report has
+  so the headline rounds each fill, and every fee figure carries an exact rounding range: unrounded
+  to whole-cent rounding on every fill. The report has
   no taker side, which only matters for centicent rounding from Jul 7, 2026 (at most $0.0001 a fill;
   the headline takes the larger side), and newer reports have no time of day, which only matters
   when a series' terms change mid-day (those fills are priced under both terms).
+- These are list-price fees, and the range covers rounding only. Some fills pay Kalshi something
+  else, and the public report doesn't say which: customers trading through a broker pay a flat
+  $0.01 per contract per side (Robinhood Derivatives' fee schedule), market makers with a Kalshi
+  agreement may pay reduced fees (Kalshi's Market Maker Program), and Kalshi runs fee-waiver
+  programs. None of these is applied.
 - The premium measure is contracts × Yes price; "dollars paid by the taker" needs the taker side,
   which the report doesn't carry.
 
