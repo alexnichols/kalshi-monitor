@@ -1,0 +1,1 @@
+{"day": "2026-10-12", "rule": "count_x_price", "classes": {"Crypto": {"notional": 859751309.8413081, "contracts": 230363720.0, "fills": 317760}, "Metals": {"notional": 45740153.33090295, "contracts": 11736406.0, "fills": 57556}, "Indices": {"notional": 5200527.565799977, "contracts": 378010.0, "fills": 7510}}}

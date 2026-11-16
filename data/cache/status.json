@@ -1,0 +1,41 @@
+{
+ "complete": false,
+ "missing_days": {
+  "events": 590,
+  "perps": 111,
+  "hyperliquid": 171
+ },
+ "first": "2025-01-01",
+ "last": "2026-11-15",
+ "stopped_early": true,
+ "progress_made": true,
+ "run": {
+  "started": "2026-11-16T08:25:17+00:00",
+  "finished": "2026-11-16T10:16:31+00:00",
+  "minutes": 111.2,
+  "rps": 4.0,
+  "workers": 3,
+  "requests": 25892,
+  "pages": 25336,
+  "http_429": 0,
+  "http_5xx": 0,
+  "network_errors": 0,
+  "pages_per_s": 3.8,
+  "progress": {
+   "events_days": 88,
+   "perps_days": 60,
+   "hyperliquid_days": 0
+  },
+  "progress_made": true,
+  "not_yet_published": [],
+  "remaining_days": {
+   "events": 590,
+   "perps": 111,
+   "hyperliquid": 171
+  },
+  "stopped_early": true,
+  "errors": [],
+  "error_count": 0,
+  "unresolved_series": {}
+ }
+}
