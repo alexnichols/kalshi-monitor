@@ -3,3 +3,5 @@ deck_tieout.json
 *deck*.json
 __pycache__/
 *.pyc
+.venv/
+.DS_Store

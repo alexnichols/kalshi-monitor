@@ -2,7 +2,7 @@ name: Refresh Kalshi data
 
 on:
   schedule:
-    - cron: "20 0 * * *"        # 00:20 UTC daily, after the UTC day closes
+    - cron: "20 9 * * *"        # 09:20 UTC: Kalshi publishes each Eastern-time day's trade report the next day
   workflow_dispatch:
     inputs:
       start:
@@ -31,6 +31,9 @@ jobs:
 
       - run: pip install requests==2.32.3
 
+      - name: Unit tests
+        run: python -m unittest discover -s tests
+
       - name: Run pipeline
         id: pipeline
         timeout-minutes: 125     # safety net; the commit step below still runs if this trips
@@ -42,7 +45,7 @@ jobs:
           fi
           python kalshi_pipeline.py \
             --cache data/cache --out docs/data.json \
-            --max-minutes 105 --rps 12 --workers 6 \
+            --max-minutes 105 --rps 4 --workers 3 \
             ${START:+--start "$START"}
 
       - name: Commit data
@@ -60,7 +63,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if python -c "import json,sys; s=json.load(open('data/cache/status.json')); sys.exit(0 if s.get('stopped_early') else 1)"; then
+          # Chain only while there is work left AND this run moved it forward; a run that made no
+          # progress (API down, every slice failing) ends the chain instead of looping.
+          if python -c "import json,sys; s=json.load(open('data/cache/status.json')); sys.exit(0 if s.get('stopped_early') and s.get('progress_made') else 1)"; then
             echo "Backfill unfinished; starting the next run."
             gh workflow run refresh.yml --ref "${{ github.ref_name }}"
+          else
+            python -c "import json; s=json.load(open('data/cache/status.json')); print('Not chaining:', {k: s.get(k) for k in ('stopped_early','progress_made','missing_days')})"
           fi

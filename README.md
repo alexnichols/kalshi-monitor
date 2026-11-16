@@ -16,7 +16,7 @@ Needs `git` and the GitHub CLI (`gh`), logged in with `gh auth login`.
 It creates the repo, pushes this folder, lets workflows write to the repo, turns on Pages
 from `main` `/docs`, and starts the backfill from 2025-01-01 (`BACKFILL_START=...` to change).
 Each run fetches for about 2 hours, newest days first, commits progress and restarts itself until every day is
-done; after that it runs nightly at 00:20 UTC. L7D and L28D appear within a few hours; older months fill in over the following days. The page loads `docs/data.json` automatically and
+done (it stops chaining if a run makes no progress); after that it runs daily at 09:20 UTC, once Kalshi has published the previous day's report. L7D and L28D appear within a few hours; older months fill in over the following days. The page loads `docs/data.json` automatically and
 shows its built-in snapshot until the first run writes it.
 
 ## Everyday CLI
@@ -43,6 +43,14 @@ python3 kalshi_pipeline.py --skip-trades --skip-perps --cache data/cache \
 That prints, month by month, computed volume against the volume your figures imply and
 computed trading fees against your trading fees, without fetching anything.
 
+## Throughput
+
+A busy day's trade report is ~20M rows (~290 MB gzipped) and takes about 3 minutes to download
+and price; 2025 days take seconds. Runs process three days at a time, so the whole history since
+January 2025 takes one or two runs. Perps come from Kalshi's API, limited to about 4 requests a
+second per IP (measured; more returns 429), so runs use `--rps 4`; a perps day is ~500 pages.
+Tests: `python -m unittest discover -s tests`.
+
 ## Cost
 
 Public repo: free. Actions minutes are unlimited for public repos and Pages is free.
@@ -51,13 +59,30 @@ Public repo: free. Actions minutes are unlimited for public repos and Pages is f
 ## Method
 
 Event contracts
-- Every fill from `GET /markets/trades` and `GET /historical/trades`, kept by its own timestamp so
-  day boundaries are exact, categorized with Kalshi's series metadata.
+- Every fill from Kalshi's daily trade report, the file behind kalshi.com/market-data
+  (`kalshi-public-docs.s3.amazonaws.com/reporting/trade_data_YYYY-MM-DD.json[.gz]`): one row per
+  fill with ticker, series, contracts and Yes price, by Kalshi's reporting day in Eastern time.
+  Checked against the API trade tape (`GET /historical/trades`) for 2025-01-15: the same 39,040 fills,
+  row for row. Its contracts sum to the day's volume in Kalshi's market report exactly. One
+  download per day replaces tens of thousands of rate-limited API pages.
+- Categorized with Kalshi's series metadata; series missing from `GET /series` are looked up
+  through the market and event endpoints. Day files keep per-series totals.
 - Fees per Kalshi's fee schedule: taker `round up(M × 0.07 × C × P × (1−P))`, maker at 0.0175
-  (combo maker multiplier 2), using each series' and event's fee terms in force on the trade date.
-  "Round up" is as the schedule defines it: fee + positionCost lands on a whole centicent.
-  Computed in integer arithmetic; matches every row of Kalshi's published fee table.
-  The public tape has fills, not orders, so rounding is applied per fill.
+  (combo maker multiplier 2), using each series' and event's fee terms in force on the trade date:
+  Kalshi's change log (`GET /series/fee_changes`, from Oct 4, 2025), current series terms for
+  series the log never mentions, and before the log the published schedules in force (archived
+  copies from Jan 2025 on): S&P 500 / Nasdaq-100 at 0.035 until Jul 3, 2026, flat maker fees of
+  `round up(0.0025 × C)` May 13 to Jul 7, 2025, then the dated maker-fee series lists.
+- Rounding as each schedule defines it: the fee rounded up to the cent before Jul 7, 2026; from
+  then, fee + positionCost rounded up to a whole centicent. Integer arithmetic; matches all 42
+  figures in Kalshi's General Trading Fees Table. Kalshi rounds per order and the report shows fills,
+  so the headline rounds each fill, and every fee figure carries an exact range: unrounded (the
+  least any order can be charged) to whole-cent rounding on every fill (the most). The report has
+  no taker side, which only matters for centicent rounding from Jul 7, 2026 (at most $0.0001 a fill;
+  the headline takes the larger side), and newer reports have no time of day, which only matters
+  when a series' terms change mid-day (those fills are priced under both terms).
+- The premium measure is contracts × Yes price; "dollars paid by the taker" needs the taker side,
+  which the report doesn't carry.
 
 Perps (Kalshi)
 - Every fill from the public `GET /margin/trades`, with contract specs from `GET /margin/markets`.
