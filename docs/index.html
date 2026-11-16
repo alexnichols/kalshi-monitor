@@ -873,6 +873,8 @@ function perpsPeriods(n){
 function perpsAgg(n, idx){
   let k = 0, lo = 0, hi = 0, mid = 0, miss = 0;
   idx.forEach(i => { k += n.k[i] || 0; if(n.low[i] == null){ miss++; return; } lo += n.low[i]; hi += n.high[i]; mid += n.mid[i]; });
+  /* A period missing any Hyperliquid day has no Hyperliquid total or share: unknown, not zero. */
+  if(miss) return { k, lo:null, hi:null, mid:null, miss, shareMid:null, shareHi:null, shareLo:null };
   return { k, lo, hi, mid, miss, shareMid: k / (k + mid), shareHi: k / (k + lo), shareLo: k / (k + hi) };
 }
 function tierOptions(sel, sch, key){
@@ -896,31 +898,32 @@ function renderPerps(){
   const rows = P.periods.map(p => Object.assign({ p }, perpsAgg(n, p.idx)));
   const last = rows[rows.length-1], prev = P.rolling ? rows.find(r => r.p.key === isoDay(Date.parse(last.p.key + "T00:00:00Z") - P.win*DAY)) : rows[rows.length-2];
   const fees = Calc.perpsFees(n, last.p.idx);
+  const pct = v => v == null ? null : v*100;
   const rangeTxt = (a, b, f) => Math.abs(b - a) / Math.max(Math.abs(a), 1) < 1e-6 ? f(a) : `${f(a)}–${f(b)}`;
   const head = P.rolling ? `L${P.win}D to ${rollLabel(last.p.key, true)}` : (state.perps.gran === "daily" ? rollLabel(last.p.key, true) : last.p.label);
   const ann = P.rolling ? 365 / P.win : null;
   document.getElementById("perpsKpis").innerHTML = `
     <div class="kpi"><div class="k">Kalshi perps, ${head}</div><div class="v">${fmtUsd(last.k)}</div><div class="r">${prev ? "vs prior " + (P.rolling ? P.win + " days" : "period") + " " + fmtChange(last.k, prev.k) : ""}</div></div>
     <div class="kpi"><div class="k">Hyperliquid perps</div><div class="v">${fmtUsd(last.mid)}</div><div class="r">${last.miss ? last.miss + " day(s) without data" : "bounds " + rangeTxt(last.lo, last.hi, fmtUsd)}</div></div>
-    <div class="kpi"><div class="k">Kalshi share</div><div class="v">${fmtPct(last.shareMid, 1)}</div><div class="r">${rangeTxt(last.shareLo*100, last.shareHi*100, v => v.toFixed(2) + "%")}</div></div>
+    <div class="kpi"><div class="k">Kalshi share</div><div class="v">${fmtPct(last.shareMid, 1)}</div><div class="r">${last.miss ? "needs Hyperliquid for every day" : rangeTxt(last.shareLo*100, last.shareHi*100, v => v.toFixed(2) + "%")}</div></div>
     <div class="kpi"><div class="k">Kalshi perps fees${fees.exact ? "" : " (tier range)"}</div><div class="v">${rangeTxt(fees.lo, fees.hi, fmtUsd)}</div><div class="r">${ann ? "annualized " + rangeTxt(fees.lo*ann, fees.hi*ann, fmtUsd) : ""}${fees.excluded ? " · excludes " + fees.excluded + " day(s) before the Jul 7, 2026 schedule" : ""}</div></div>`;
   const labels = rows.map(r => r.p.label);
   if(P.rolling){
     document.getElementById("perpsLegend").innerHTML = `<span><i style="background:${t.kalshi}"></i>Kalshi share of Kalshi + Hyperliquid notional</span><span><i style="background:${hexA(t.kalshi.startsWith("#") ? t.kalshi : "#3F7A2C", .25)}"></i>Exact bounds from Hyperliquid’s candle range</span>`;
     mkChart("perpsChart", { type:"line", data:{ labels, datasets:[
-        { label:"Upper bound", data: rows.map(r => r.shareHi*100), borderWidth:0, pointRadius:0, fill:false },
-        { label:"Lower bound", data: rows.map(r => r.shareLo*100), borderWidth:0, pointRadius:0, fill:"-1", backgroundColor: hexA(t.kalshi.startsWith("#") ? t.kalshi : "#3F7A2C", .22) },
-        { label:"Kalshi share", data: rows.map(r => r.shareMid*100), borderColor:t.kalshi, backgroundColor:t.kalshi, borderWidth:2, pointRadius:0, tension:0, fill:false } ] },
+        { label:"Upper bound", data: rows.map(r => pct(r.shareHi)), borderWidth:0, pointRadius:0, fill:false },
+        { label:"Lower bound", data: rows.map(r => pct(r.shareLo)), borderWidth:0, pointRadius:0, fill:"-1", backgroundColor: hexA(t.kalshi.startsWith("#") ? t.kalshi : "#3F7A2C", .22) },
+        { label:"Kalshi share", data: rows.map(r => pct(r.shareMid)), borderColor:t.kalshi, backgroundColor:t.kalshi, borderWidth:2, pointRadius:0, tension:0, fill:false } ] },
       options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, scales: baseScales(t, v => v + "%"),
         plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { callbacks:{ title: it => `L${P.win}D ending ${rollLabel(rows[it[0].dataIndex].p.key, true)}`, label: c => ` ${c.dataset.label}: ${c.parsed.y.toFixed(2)}%` } }) } } });
   } else {
     document.getElementById("perpsLegend").innerHTML = `<span><i style="background:var(--poly)"></i>Hyperliquid share</span><span><i style="background:var(--kalshi)"></i>Kalshi share</span>`;
     mkChart("perpsChart", { type:"bar", data:{ labels, datasets:[
-        { label:"Kalshi", data: rows.map(r => r.shareMid*100), backgroundColor:t.kalshi, borderWidth:0, maxBarThickness:60 },
-        { label:"Hyperliquid", data: rows.map(r => 100 - r.shareMid*100), backgroundColor:t.poly, borderWidth:0, maxBarThickness:60 } ] },
+        { label:"Kalshi", data: rows.map(r => pct(r.shareMid)), backgroundColor:t.kalshi, borderWidth:0, maxBarThickness:60 },
+        { label:"Hyperliquid", data: rows.map(r => r.shareMid == null ? null : 100 - r.shareMid*100), backgroundColor:t.poly, borderWidth:0, maxBarThickness:60 } ] },
       options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, scales: baseScales(t, v => v + "%", { stacked:true, max:100 }),
         plugins:{ legend:{ display:false }, tooltip:Object.assign(tooltipBase(t), { itemSort:(a,b) => b.datasetIndex - a.datasetIndex,
-          callbacks:{ label: c => { const r = rows[c.dataIndex]; return c.datasetIndex === 0 ? ` Kalshi: ${fmtUsd(r.k)}, share ${rangeTxt(r.shareLo*100, r.shareHi*100, v => v.toFixed(2) + "%")}` : ` Hyperliquid: ${rangeTxt(r.lo, r.hi, fmtUsd)}`; } } }) } }
+          callbacks:{ label: c => { const r = rows[c.dataIndex]; return c.datasetIndex === 0 ? ` Kalshi: ${fmtUsd(r.k)}, share ${r.miss ? "–" : rangeTxt(r.shareLo*100, r.shareHi*100, v => v.toFixed(2) + "%")}` : ` Hyperliquid: ${r.miss ? "–" : rangeTxt(r.lo, r.hi, fmtUsd)}`; } } }) } }
     }, { seg:{ format:v => (v < 10 ? v.toFixed(1) : Math.round(v)) + "%", color:() => "#FFFFFF" } });
   }
   const classes = Object.keys(n.classes || {});
