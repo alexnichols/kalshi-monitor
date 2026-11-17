@@ -11,6 +11,12 @@
 "tries": 1,
 "via": "/markets/KXAGCOMMRACE-MS-27-D -> /events/KXAGCOMMRACE-MS-27"
 },
+"KXAGRACE-KY": {
+"category": "Elections",
+"example": "KXAGRACE-KY-27-D",
+"tries": 1,
+"via": "/markets/KXAGRACE-KY-27-D -> /events/KXAGRACE-KY-27"
+},
 "KXAGRACE-MS": {
 "category": "Elections",
 "example": "KXAGRACE-MS-27-D",
@@ -106,6 +112,12 @@
 "example": "KXCOLLECTIONSALE-KOONS-17NOV26-130000000",
 "tries": 1,
 "via": "/markets/KXCOLLECTIONSALE-KOONS-17NOV26-130000000 -> /events/KXCOLLECTIONSALE-KOONS-17NOV26"
+},
+"KXDARKHORSEPRES": {
+"category": "Elections",
+"example": "KXDARKHORSEPRES-28-DH",
+"tries": 1,
+"via": "/series/KXDARKHORSEPRES"
 },
 "KXDOGEMAXMON-DOGE": {
 "category": "Crypto",
@@ -334,6 +346,12 @@
 "example": "KXGOVRACE-TX-30-R",
 "tries": 1,
 "via": "/markets/KXGOVRACE-TX-30-R -> /events/KXGOVRACE-TX-30"
+},
+"KXGOVRACE-VA": {
+"category": "Elections",
+"example": "KXGOVRACE-VA-29-D",
+"tries": 1,
+"via": "/markets/KXGOVRACE-VA-29-D -> /events/KXGOVRACE-VA-29"
 },
 "KXHDDCVG-KCVG": {
 "category": "Climate and Weather",
@@ -653,6 +671,18 @@
 "tries": 1,
 "via": "/historical/markets/KXNGASMAX-B-25DEC29-P5 -> /events/KXNGASMAX-B-25DEC29"
 },
+"KXNHLPSEASONPOINTS": {
+"category": "Sports",
+"example": "KXNHLPSEASONPOINTS-27CMCDAVID97-120",
+"tries": 1,
+"via": "/series/KXNHLPSEASONPOINTS"
+},
+"KXPRESDEBATECANDD": {
+"category": "Elections",
+"example": "KXPRESDEBATECANDD-28FEB29-AL10",
+"tries": 1,
+"via": "/series/KXPRESDEBATECANDD"
+},
 "KXPRESDISTRICT-DC": {
 "category": "Elections",
 "example": "KXPRESDISTRICT-DC-28-R",
@@ -964,6 +994,12 @@
 "example": "KXRWAMCAPAVAX-AVALANCHE-26JAN01-700",
 "tries": 1,
 "via": "/historical/markets/KXRWAMCAPAVAX-AVALANCHE-26JAN01-700 -> /events/KXRWAMCAPAVAX-AVALANCHE-26JAN01"
+},
+"KXSCALISEANNOUNCEOUT": {
+"category": "Politics",
+"example": "KXSCALISEANNOUNCEOUT-26NOV-27MAR01",
+"tries": 1,
+"via": "/series/KXSCALISEANNOUNCEOUT"
 },
 "KXSENATENOM-ALR": {
 "category": "Elections",
