@@ -1,43 +1,41 @@
 {
- "complete": false,
+ "complete": true,
  "missing_days": {
-  "events": 1,
+  "events": 0,
   "perps": 0,
   "hyperliquid": 0
  },
  "first": "2025-01-01",
  "last": "2026-11-17",
- "stopped_early": true,
+ "stopped_early": false,
  "progress_made": true,
  "run": {
-  "started": "2026-11-18T18:11:07+00:00",
-  "finished": "2026-11-18T18:38:32+00:00",
-  "minutes": 27.4,
+  "started": "2026-11-18T18:39:03+00:00",
+  "finished": "2026-11-18T18:46:01+00:00",
+  "minutes": 7.0,
   "rps": 4.0,
   "workers": 3,
-  "requests": 1876,
-  "pages": 1873,
+  "requests": 965,
+  "pages": 937,
   "http_429": 0,
   "http_5xx": 0,
   "network_errors": 0,
-  "pages_per_s": 1.14,
+  "pages_per_s": 2.24,
   "progress": {
-   "events_days": 0,
-   "perps_days": 1,
-   "hyperliquid_days": 1
+   "events_days": 1,
+   "perps_days": 0,
+   "hyperliquid_days": 0
   },
   "progress_made": true,
   "not_yet_published": [],
   "remaining_days": {
-   "events": 1,
+   "events": 0,
    "perps": 0,
    "hyperliquid": 0
   },
-  "stopped_early": true,
-  "errors": [
-   "events 2026-11-17: ('Connection broken: IncompleteRead(102428078 bytes read, 120767550 more expected)', IncompleteRead(102428078 bytes read, 120767550 more expected))"
-  ],
-  "error_count": 1,
+  "stopped_early": false,
+  "errors": [],
+  "error_count": 0,
   "unresolved_series": {}
  }
 }
