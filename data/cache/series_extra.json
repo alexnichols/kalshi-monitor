@@ -107,6 +107,12 @@
 "tries": 1,
 "via": "/markets/KXBTCMINMON-BTC-26NOV30-5750000 -> /events/KXBTCMINMON-BTC-26NOV30"
 },
+"KXCANESFT": {
+"category": "Financials",
+"example": "KXCANESFT-26DEC08-T102.5",
+"tries": 1,
+"via": "/series/KXCANESFT"
+},
 "KXCAOPENAISUIT": {
 "category": "Politics",
 "example": "KXCAOPENAISUIT-28",
@@ -119,11 +125,23 @@
 "tries": 1,
 "via": "/series/KXCBODIR"
 },
+"KXCFILFT": {
+"category": "Financials",
+"example": "KXCFILFT-26DEC08-T96",
+"tries": 1,
+"via": "/series/KXCFILFT"
+},
 "KXCHIMAYORADVANCE": {
 "category": "Elections",
 "example": "KXCHIMAYORADVANCE-27MAR17-BJOH",
 "tries": 1,
 "via": "/series/KXCHIMAYORADVANCE"
+},
+"KXCHINATRAVEL": {
+"category": "Politics",
+"example": "KXCHINATRAVEL-27JAN01",
+"tries": 1,
+"via": "/series/KXCHINATRAVEL"
 },
 "KXCOACHOUTAUB-AUB": {
 "category": "Sports",
@@ -232,6 +250,12 @@
 "example": "KXDOGEMINY-DOGE-26DEC31-005",
 "tries": 1,
 "via": "/markets/KXDOGEMINY-DOGE-26DEC31-005 -> /events/KXDOGEMINY-DOGE-26DEC31"
+},
+"KXEARNINGSMENTIONABBV": {
+"category": "Mentions",
+"example": "KXEARNINGSMENTIONABBV-27FEB03-VYAL",
+"tries": 1,
+"via": "/series/KXEARNINGSMENTIONABBV"
 },
 "KXEARNINGSMENTIONABT": {
 "category": "Mentions",
@@ -358,6 +382,12 @@
 "example": "KXEARNINGSMENTIONSNDK-27JAN28-BICS",
 "tries": 1,
 "via": "/series/KXEARNINGSMENTIONSNDK"
+},
+"KXEARNINGSMENTIONTJX": {
+"category": "Mentions",
+"example": "KXEARNINGSMENTIONTJX-27FEB24-MARS",
+"tries": 1,
+"via": "/series/KXEARNINGSMENTIONTJX"
 },
 "KXEARNINGSMENTIONTMO": {
 "category": "Mentions",
@@ -599,6 +629,12 @@
 "tries": 1,
 "via": "/markets/KXGENERALMOV-SENATETX-26-JTAL-P8 -> /events/KXGENERALMOV-SENATETX-26"
 },
+"KXGOLDTENDERSTATES": {
+"category": "Politics",
+"example": "KXGOLDTENDERSTATES-28-WV",
+"tries": 1,
+"via": "/series/KXGOLDTENDERSTATES"
+},
 "KXGOOGLESCHOOLS": {
 "category": "Politics",
 "example": "KXGOOGLESCHOOLS-27-NYC",
@@ -797,11 +833,23 @@
 "tries": 1,
 "via": "/series/KXJEFFRIESCAUCUSVOTES"
 },
+"KXKFCFT": {
+"category": "Financials",
+"example": "KXKFCFT-26DEC08-T102.5",
+"tries": 1,
+"via": "/series/KXKFCFT"
+},
 "KXKIRKCONF": {
 "category": "Politics",
 "example": "KXKIRKCONF-26NOV19",
 "tries": 1,
 "via": "/series/KXKIRKCONF"
+},
+"KXKYMR621EASI": {
+"category": "Financials",
+"example": "KXKYMR621EASI-BROADEN2W16-31DEC26-T25P0",
+"tries": 1,
+"via": "/series/KXKYMR621EASI"
 },
 "KXMAXTPSAVAX-AVALANCHE": {
 "category": "Crypto",
@@ -815,11 +863,23 @@
 "tries": 1,
 "via": "/series/KXMEASLESREGAIN"
 },
+"KXMEXCOALREG": {
+"category": "Elections",
+"example": "KXMEXCOALREG-27-27FEB01",
+"tries": 1,
+"via": "/series/KXMEXCOALREG"
+},
 "KXMEXICODEPUTIES2ND": {
 "category": "Elections",
 "example": "KXMEXICODEPUTIES2ND-27-2-PAN",
 "tries": 1,
 "via": "/series/KXMEXICODEPUTIES2ND"
+},
+"KXMEXMINWAGE": {
+"category": "Politics",
+"example": "KXMEXMINWAGE-26DEC31-AL9",
+"tries": 1,
+"via": "/series/KXMEXMINWAGE"
 },
 "KXMULLINANNOUNCEOUT": {
 "category": "Politics",
@@ -1024,6 +1084,18 @@
 "example": "KXNBAWINS-WAS-25-T20",
 "tries": 1,
 "via": "/historical/markets/KXNBAWINS-WAS-25-T20 -> /events/KXNBAWINS-WAS-25"
+},
+"KXNBBSPREAD": {
+"category": "Sports",
+"example": "KXNBBSPREAD-26NOV201600CDSBAU-BAU11",
+"tries": 1,
+"via": "/series/KXNBBSPREAD"
+},
+"KXNBBTOTAL": {
+"category": "Sports",
+"example": "KXNBBTOTAL-26NOV201600CDSBAU-120",
+"tries": 1,
+"via": "/series/KXNBBTOTAL"
 },
 "KXNCAABMENTION-ACC": {
 "category": "Mentions",
@@ -1445,6 +1517,12 @@
 "tries": 1,
 "via": "/series/KXPRODCAGR"
 },
+"KXRAINCOACHELLA": {
+"category": "Climate and Weather",
+"example": "KXRAINCOACHELLA-2027-W1",
+"tries": 1,
+"via": "/series/KXRAINCOACHELLA"
+},
 "KXRAINSLAX": {
 "category": "Climate and Weather",
 "example": "KXRAINSLAX-19NOV26-22NOV26-T0P5",
@@ -1462,6 +1540,12 @@
 "example": "KXRFQRAIN-40755N73993W-26NOV1923Z-1H-G10",
 "tries": 1,
 "via": "/series/KXRFQRAIN"
+},
+"KXRFQRAINHOURS": {
+"category": "Weather",
+"example": "KXRFQRAINHOURS-37765N122452W-26NOV2108Z-24H-G1",
+"tries": 1,
+"via": "/series/KXRFQRAINHOURS"
 },
 "KXRWAMCAPAVAX-AVALANCHE": {
 "category": "Crypto",
@@ -1769,6 +1853,18 @@
 "tries": 1,
 "via": "/series/KXSENDEMLEADVOTE"
 },
+"KXSEPHORACCD": {
+"category": "Financials",
+"example": "KXSEPHORACCD-30NOV26-T10",
+"tries": 1,
+"via": "/series/KXSEPHORACCD"
+},
+"KXSHEINCCD": {
+"category": "Financials",
+"example": "KXSHEINCCD-27NOV26-TM17",
+"tries": 1,
+"via": "/series/KXSHEINCCD"
+},
 "KXSOLMAXMON-SOL": {
 "category": "Crypto",
 "example": "KXSOLMAXMON-SOL-26NOV30-11000",
@@ -1811,6 +1907,12 @@
 "tries": 1,
 "via": "/series/KXSPAINABROAD"
 },
+"KXSPAINCOMBO": {
+"category": "Elections",
+"example": "KXSPAINCOMBO-28AUG-PP-FEIJOO",
+"tries": 1,
+"via": "/series/KXSPAINCOMBO"
+},
 "KXSPAINFACOUNT": {
 "category": "Elections",
 "example": "KXSPAINFACOUNT-26NOV29-AL10",
@@ -1852,6 +1954,12 @@
 "example": "KXTOURCANCEL-LOOP-12DEC26-T4",
 "tries": 1,
 "via": "/markets/KXTOURCANCEL-LOOP-12DEC26-T4 -> /events/KXTOURCANCEL-LOOP-12DEC26"
+},
+"KXTRANSTROOPS": {
+"category": "Politics",
+"example": "KXTRANSTROOPS-TALBOTT27",
+"tries": 1,
+"via": "/series/KXTRANSTROOPS"
 },
 "KXTREASRACE-MS": {
 "category": "Elections",
@@ -1901,6 +2009,12 @@
 "tries": 1,
 "via": "/series/KXTXABORTION"
 },
+"KXTXH1BFREEZE": {
+"category": "Politics",
+"example": "KXTXH1BFREEZE-27",
+"tries": 1,
+"via": "/series/KXTXH1BFREEZE"
+},
 "KXULTACCD": {
 "category": "Financials",
 "example": "KXULTACCD-27NOV26-TM7",
@@ -1936,6 +2050,12 @@
 "example": "KXUSMEXTARIFFUP-27-DEC01",
 "tries": 1,
 "via": "/series/KXUSMEXTARIFFUP"
+},
+"KXVANCENUMSTATES": {
+"category": "Politics",
+"example": "KXVANCENUMSTATES-26NOV19-AL6",
+"tries": 1,
+"via": "/series/KXVANCENUMSTATES"
 },
 "KXVENEZUELADEPLOY-SENATE": {
 "category": "Politics",
