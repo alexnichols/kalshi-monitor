@@ -47,6 +47,12 @@
 "tries": 1,
 "via": "/series/KXAMZNCCD"
 },
+"KXANFCCD": {
+"category": "Financials",
+"example": "KXANFCCD-27NOV26-TM4",
+"tries": 1,
+"via": "/series/KXANFCCD"
+},
 "KXAOCFIRSTRUN": {
 "category": "Elections",
 "example": "KXAOCFIRSTRUN-28-SEN",
@@ -107,11 +113,23 @@
 "tries": 1,
 "via": "/markets/KXBNBMINY-BNB-26DEC31-52000 -> /events/KXBNBMINY-BNB-26DEC31"
 },
+"KXBOARDNVDA": {
+"category": "Companies",
+"example": "KXBOARDNVDA-01JAN27-HJON",
+"tries": 1,
+"via": "/series/KXBOARDNVDA"
+},
 "KXBTCDIFFEOY": {
 "category": "Crypto",
 "example": "KXBTCDIFFEOY-31DEC27-T17500",
 "tries": 1,
 "via": "/series/KXBTCDIFFEOY"
+},
+"KXBTCDIFFICULTY": {
+"category": "Crypto",
+"example": "KXBTCDIFFICULTY-31DEC26-T23749",
+"tries": 1,
+"via": "/series/KXBTCDIFFICULTY"
 },
 "KXBTCMAXMON-BTC": {
 "category": "Crypto",
@@ -124,6 +142,12 @@
 "example": "KXBTCMINMON-BTC-26NOV30-5750000",
 "tries": 1,
 "via": "/markets/KXBTCMINMON-BTC-26NOV30-5750000 -> /events/KXBTCMINMON-BTC-26NOV30"
+},
+"KXCANCPIYOY": {
+"category": "Economics",
+"example": "KXCANCPIYOY-26DEC14-T2.8",
+"tries": 1,
+"via": "/series/KXCANCPIYOY"
 },
 "KXCANESFT": {
 "category": "Financials",
@@ -178,6 +202,12 @@
 "example": "KXCOLIMAGOV-27JUN06-MOR",
 "tries": 1,
 "via": "/series/KXCOLIMAGOV"
+},
+"KXCOLLATZ": {
+"category": "Science and Technology",
+"example": "KXCOLLATZ-35-28JAN01",
+"tries": 1,
+"via": "/series/KXCOLLATZ"
 },
 "KXCOLLECTIONSALE-BLA": {
 "category": "Entertainment",
@@ -683,6 +713,12 @@
 "tries": 1,
 "via": "/markets/KXGENERALMOV-SENATETX-26-JTAL-P8 -> /events/KXGENERALMOV-SENATETX-26"
 },
+"KXGOLDBACH": {
+"category": "Science and Technology",
+"example": "KXGOLDBACH-35-28JAN01",
+"tries": 1,
+"via": "/series/KXGOLDBACH"
+},
 "KXGOLDTENDERSTATES": {
 "category": "Politics",
 "example": "KXGOLDTENDERSTATES-28-WV",
@@ -899,6 +935,12 @@
 "tries": 1,
 "via": "/series/KXJEFFRIESCAUCUSVOTES"
 },
+"KXJENSENOUT": {
+"category": "Financials",
+"example": "KXJENSENOUT-26",
+"tries": 1,
+"via": "/series/KXJENSENOUT"
+},
 "KXJPNCPIYOY": {
 "category": "Economics",
 "example": "KXJPNCPIYOY-26DEC17-T2.3",
@@ -970,6 +1012,12 @@
 "example": "KXMEXMINWAGEFRONT-26DEC31-AL8",
 "tries": 1,
 "via": "/series/KXMEXMINWAGEFRONT"
+},
+"KXMFTD": {
+"category": "Financials",
+"example": "KXMFTD-27NOV26-TM8",
+"tries": 1,
+"via": "/series/KXMFTD"
 },
 "KXMNASSAULTBAN": {
 "category": "Politics",
@@ -1259,11 +1307,23 @@
 "tries": 1,
 "via": "/series/KXNIKEVALEDICTORIAN"
 },
+"KXNVDABOARDTESTIFY": {
+"category": "Politics",
+"example": "KXNVDABOARDTESTIFY-28JAN-27MAR",
+"tries": 1,
+"via": "/series/KXNVDABOARDTESTIFY"
+},
 "KXNVDACEOHIRE": {
 "category": "Financials",
 "example": "KXNVDACEOHIRE-29-29JAN01-INT",
 "tries": 1,
 "via": "/series/KXNVDACEOHIRE"
+},
+"KXNVDACHARGE": {
+"category": "Politics",
+"example": "KXNVDACHARGE-28JAN01-28JAN01",
+"tries": 1,
+"via": "/series/KXNVDACHARGE"
 },
 "KXNYCDELIVERYACT": {
 "category": "Politics",
@@ -1666,6 +1726,12 @@
 "example": "KXRFQRAINHOURS-37765N122452W-26NOV2108Z-24H-G1",
 "tries": 1,
 "via": "/series/KXRFQRAINHOURS"
+},
+"KXRIKERSDEADLINE": {
+"category": "Politics",
+"example": "KXRIKERSDEADLINE-27SEP01-27JUL01",
+"tries": 1,
+"via": "/series/KXRIKERSDEADLINE"
 },
 "KXRWAMCAPAVAX-AVALANCHE": {
 "category": "Crypto",
@@ -2201,6 +2267,12 @@
 "tries": 1,
 "via": "/series/KXVANCENUMSTATES"
 },
+"KXVENEZAMB": {
+"category": "Politics",
+"example": "KXVENEZAMB-28JAN01",
+"tries": 1,
+"via": "/series/KXVENEZAMB"
+},
 "KXVENEZUELADEPLOY-SENATE": {
 "category": "Politics",
 "example": "KXVENEZUELADEPLOY-SENATE-26JAN04-MAR26",
@@ -2254,6 +2326,30 @@
 "example": "KXWMTCCD-27NOV26-T12",
 "tries": 1,
 "via": "/series/KXWMTCCD"
+},
+"KXWORLDCHESSDRAWS": {
+"category": "Sports",
+"example": "KXWORLDCHESSDRAWS-2026-9",
+"tries": 1,
+"via": "/series/KXWORLDCHESSDRAWS"
+},
+"KXWORLDCHESSMATCH": {
+"category": "Sports",
+"example": "KXWORLDCHESSMATCH-26NOV24G1JSINGDOM-GDOM",
+"tries": 1,
+"via": "/series/KXWORLDCHESSMATCH"
+},
+"KXWORLDCHESSSPREAD": {
+"category": "Sports",
+"example": "KXWORLDCHESSSPREAD-26GDOMJSIN-JSIN3",
+"tries": 1,
+"via": "/series/KXWORLDCHESSSPREAD"
+},
+"KXWORLDCHESSTIEBREAK": {
+"category": "Sports",
+"example": "KXWORLDCHESSTIEBREAK-2026-Y",
+"tries": 1,
+"via": "/series/KXWORLDCHESSTIEBREAK"
 },
 "KXXRPMAXMON-XRP": {
 "category": "Crypto",
