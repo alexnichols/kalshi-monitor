@@ -1,41 +1,43 @@
 {
- "complete": true,
+ "complete": false,
  "missing_days": {
   "events": 0,
-  "perps": 0,
-  "hyperliquid": 0
+  "perps": 1,
+  "hyperliquid": 1
  },
  "first": "2025-01-01",
- "last": "2026-11-24",
- "stopped_early": false,
+ "last": "2026-11-25",
+ "stopped_early": true,
  "progress_made": true,
  "run": {
-  "started": "2026-11-25T19:25:41+00:00",
-  "finished": "2026-11-25T19:54:17+00:00",
-  "minutes": 28.6,
+  "started": "2026-11-26T19:08:20+00:00",
+  "finished": "2026-11-26T19:16:00+00:00",
+  "minutes": 7.7,
   "rps": 4.0,
   "workers": 3,
-  "requests": 1985,
-  "pages": 1960,
+  "requests": 519,
+  "pages": 470,
   "http_429": 0,
   "http_5xx": 0,
   "network_errors": 0,
-  "pages_per_s": 1.14,
+  "pages_per_s": 1.02,
   "progress": {
    "events_days": 1,
-   "perps_days": 1,
-   "hyperliquid_days": 1
+   "perps_days": 0,
+   "hyperliquid_days": 0
   },
   "progress_made": true,
   "not_yet_published": [],
   "remaining_days": {
    "events": 0,
-   "perps": 0,
-   "hyperliquid": 0
+   "perps": 1,
+   "hyperliquid": 1
   },
-  "stopped_early": false,
-  "errors": [],
-  "error_count": 0,
+  "stopped_early": true,
+  "errors": [
+   "perps: Perps notional check failed: best rule count_x_price is off by 1.62% against Kalshi's reported 24h notional. Not computing perps until this is resolved."
+  ],
+  "error_count": 1,
   "unresolved_series": {}
  }
 }
